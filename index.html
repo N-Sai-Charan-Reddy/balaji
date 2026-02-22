@@ -927,16 +927,7 @@ input, select, textarea { font-family: inherit; }
    5. Run: firebase deploy
 */
 
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAtPEDYE-eUmcLAemd6C3bU0Q4eoTWBssg",
-    authDomain: "mypro-d654f.firebaseapp.com",
-    databaseURL: "https://mypro-d654f-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "mypro-d654f",
-    storageBucket: "mypro-d654f.firebasestorage.app",
-    messagingSenderId: "243311351506",
-    appId: "1:243311351506:web:2a52751d61b6759da23f0b",
-    measurementId: "G-VW2M2M49VV"
-  }; // ← PASTE YOUR CONFIG HERE
+const FIREBASE_CONFIG = null;  // ← PASTE YOUR CONFIG HERE
 /* Example — replace the null above with your actual config:
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
@@ -1032,6 +1023,11 @@ async function loadAllData() {
         await pushLocalToCloud();
       }
       setSyncStatus('online');
+
+      // ✅ START REAL-TIME LISTENER
+      // When ANY friend saves/edits anything, ALL screens update automatically within 2 seconds
+      setupRealTimeSync();
+
     } catch(e) {
       console.warn("Cloud load failed, using local:", e);
       loadFromLocal();
@@ -1040,6 +1036,71 @@ async function loadAllData() {
   } else {
     loadFromLocal();
   }
+}
+
+/* ══════════════════════════════════════════
+   REAL-TIME SYNC — THE KEY FEATURE
+   ─ Firebase watches for ANY change in the cloud
+   ─ When your friend saves a customer / invoice / product
+   ─ YOUR screen updates automatically within 1-2 seconds
+   ─ No refresh needed. Works for all 5 users simultaneously.
+══════════════════════════════════════════ */
+let _rtListenerActive = false;
+
+function setupRealTimeSync() {
+  if (_rtListenerActive) return; // attach only once
+  _rtListenerActive = true;
+
+  db.ref('balaji').on('value', (snap) => {
+    if (!snap.exists()) return;
+    const d = snap.val();
+
+    const newInvoices  = d.ksInvoices  || [];
+    const newProducts  = d.ksProducts  || [];
+    const newCustomers = d.ksCustomers || [];
+    const newPurchases = d.ksPurchases || [];
+    const newInvNo     = d.invoiceNo   || invoiceNo;
+
+    // Only update if something actually changed
+    const changed =
+      JSON.stringify(newInvoices)  !== JSON.stringify(invoices)  ||
+      JSON.stringify(newProducts)  !== JSON.stringify(products)  ||
+      JSON.stringify(newCustomers) !== JSON.stringify(customers) ||
+      JSON.stringify(newPurchases) !== JSON.stringify(purchases) ||
+      newInvNo !== invoiceNo;
+
+    if (changed) {
+      invoices  = newInvoices;
+      products  = newProducts;
+      customers = newCustomers;
+      purchases = newPurchases;
+      invoiceNo = newInvNo;
+
+      // Update local cache
+      localStorage.setItem("ksInvoices",  JSON.stringify(invoices));
+      localStorage.setItem("ksProducts",  JSON.stringify(products));
+      localStorage.setItem("ksCustomers", JSON.stringify(customers));
+      localStorage.setItem("ksPurchases", JSON.stringify(purchases));
+
+      // Refresh whichever screen is currently open
+      updateCounts();
+      const active = document.querySelector('.screen.active');
+      if (active) {
+        const id = active.id;
+        if (id === 'dashboardScreen')  showDashboard();
+        if (id === 'customerScreen')   showCustomers();
+        if (id === 'productScreen')    showProducts();
+        if (id === 'invoiceScreen')    showHistory();
+        if (id === 'purchaseScreen')   showPurchaseHistory();
+      }
+
+      setSyncStatus('online');
+      toast('🔄 Updated by another user', 'info');
+    }
+  }, (error) => {
+    console.warn('Real-time sync error:', error);
+    setSyncStatus('error');
+  });
 }
 
 function loadFromLocal() {
@@ -1572,7 +1633,7 @@ function createInvoice() {
           <!-- Header -->
           <div class="inv-head">
             <div class="inv-head-logo">
-              <img src="logo.jpeg" onerror="this.style.display='none'" style="width:80px">
+              <img src="logo.png" onerror="this.style.display='none'" style="width:80px">
             </div>
             <div class="inv-head-center">
               <div class="namah">॥ Shree Ganeshaya Namah ॥</div>
