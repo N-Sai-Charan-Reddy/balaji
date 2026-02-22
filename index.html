@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BALAJI TEXTILES — Professional Billing</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js">
+/* ── User menu ── */
+function toggleUserMenu() {
+  const m = document.getElementById('user-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.tb-avatar') && !e.target.closest('#user-menu')) {
+    const m = document.getElementById('user-menu');
+    if (m) m.style.display = 'none';
+  }
+});
+function lockApp() {
+  document.getElementById('setup-overlay').style.display = 'flex';
+  showStep('s-welcome');
+  clearPins('pin-');
+  setTimeout(() => document.getElementById('pin-d1')?.focus(), 100);
+  document.getElementById('user-menu').style.display = 'none';
+}
+function resetSetup() {
+  if (!confirm('This will clear your local PIN cache. Your cloud data stays safe. Continue?')) return;
+  localStorage.removeItem('fbConfig');
+  localStorage.removeItem('pinHash');
+  db = null; isOnline = false;
+  lockApp();
+}
+
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════
+   DESIGN TOKENS — Premium Light / Fintech Theme
+══════════════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg:        #f0f2f7;
+  --bg2:       #e8eaf2;
+  --white:     #ffffff;
+  --white2:    #fafbfd;
+
+  /* Surfaces */
+  --surface:   #ffffff;
+  --surface2:  #f7f8fc;
+  --surface3:  #eef0f8;
+
+  /* Navy brand */
+  --navy:      #0f1e3d;
+  --navy2:     #162952;
+  --navy3:     #1e3a6e;
+
+  /* Saffron accent */
+  --saffron:   #e8720c;
+  --saffron2:  #ff8c2a;
+  --saffron-l: rgba(232,114,12,0.10);
+  --saffron-b: rgba(232,114,12,0.20);
+
+  /* Status colors */
+  --green:     #0cad6a;
+  --green-l:   rgba(12,173,106,0.10);
+  --red:       #e83a3a;
+  --red-l:     rgba(232,58,58,0.10);
+  --blue:      #2563eb;
+  --blue-l:    rgba(37,99,235,0.10);
+  --purple:    #7c3aed;
+
+  /* Text */
+  --text:      #0f1e3d;
+  --text2:     #3d5080;
+  --text3:     #7a8cb0;
+  --text4:     #b0bdd4;
+
+  /* Borders */
+  --border:    #dde3f0;
+  --border2:   #c8d0e8;
+
+  /* Misc */
+  --radius:    10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --sidebar-w: 248px;
+  --topbar-h:  60px;
+  --shadow:    0 1px 3px rgba(15,30,61,0.08), 0 4px 16px rgba(15,30,61,0.06);
+  --shadow-lg: 0 4px 24px rgba(15,30,61,0.12), 0 12px 40px rgba(15,30,61,0.08);
+  --transition: 0.18s cubic-bezier(.4,0,.2,1);
+}
+
+/* ══════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+body { display: flex; flex-direction: column; overflow: hidden; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Protect invoice from global reset */
+#inv-doc p, #inv-doc h1, #inv-doc h2, #inv-doc h3, #inv-doc b, #inv-doc li { margin: revert; padding: revert; }
+
+/* ══════════════════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════════════════ */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  padding: 0 0 0 0;
+  flex-shrink: 0;
+  z-index: 300;
+}
+
+.tb-logo-area {
+  width: var(--sidebar-w);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.tb-logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--saffron), var(--saffron2));
+  border-radius: 9px;
+  display: grid; place-items: center;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(232,114,12,0.4);
+}
+
+.tb-logo-text { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -0.2px; line-height: 1.2; }
+.tb-logo-text span { color: var(--saffron2); }
+.tb-logo-sub { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.45); letter-spacing: 1.5px; text-transform: uppercase; }
+
+.tb-middle { flex: 1; display: flex; align-items: center; padding: 0 24px; gap: 16px; }
+
+.tb-search {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 7px 12px;
+  width: 260px;
+}
+
+.tb-search input {
+  background: transparent; border: none; outline: none;
+  color: rgba(255,255,255,0.8); font-size: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif; width: 100%;
+}
+
+.tb-search input::placeholder { color: rgba(255,255,255,0.35); }
+.tb-search-icon { font-size: 12px; opacity: 0.4; }
+
+.tb-right { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-right: 24px; }
+
+.tb-date { font-size: 11px; color: rgba(255,255,255,0.45); font-family: 'JetBrains Mono', monospace; }
+
+.tb-gst-badge {
+  background: rgba(12,173,106,0.2);
+  border: 1px solid rgba(12,173,106,0.35);
+  color: #4ade80;
+  font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px;
+  letter-spacing: 0.8px; text-transform: uppercase;
+}
+
+.tb-avatar {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--saffron), #ff9f45);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 700; color: white;
+}
+
+/* ══════════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════════ */
+.app { display: flex; flex: 1; overflow: hidden; }
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
+}
+
+.sidebar-scroll { flex: 1; overflow-y: auto; padding: 12px 10px; }
+
+.nav-group-label {
+  font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3);
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 16px 12px 7px;
+}
+
+.nav-group-label:first-child { padding-top: 8px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 9px;
+  background: transparent; border: none;
+  color: rgba(255,255,255,0.55);
+  font-size: 13px; font-weight: 500;
+  width: 100%; text-align: left;
+  transition: all var(--transition);
+  margin-bottom: 1px; position: relative;
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
+
+.nav-item.active {
+  background: linear-gradient(135deg, var(--saffron), var(--saffron2));
+  color: #fff; font-weight: 700;
+  box-shadow: 0 4px 14px rgba(232,114,12,0.35);
+}
+
+.nav-icon { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+
+.nav-badge {
+  margin-left: auto;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  font-size: 10px; font-weight: 700;
+  padding: 1px 7px; border-radius: 20px;
+  min-width: 20px; text-align: center;
+}
+
+.nav-item.active .nav-badge { background: rgba(255,255,255,0.25); color: #fff; }
+
+.sidebar-bottom {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.sidebar-gstin {
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px; padding: 10px 12px;
+}
+
+.sidebar-gstin .lbl { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+.sidebar-gstin .val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--saffron2); font-weight: 600; }
+
+/* ══════════════════════════════════════════════════
+   MAIN CONTENT
+══════════════════════════════════════════════════ */
+.main {
+  flex: 1; overflow-y: auto;
+  background: var(--bg);
+  padding: 28px 32px;
+}
+
+.screen { display: none; }
+.screen.active { display: block; animation: screenIn 0.22s cubic-bezier(.4,0,.2,1); }
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════
+   PAGE HEADER
+══════════════════════════════════════════════════ */
+.page-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 14px;
+}
+
+.ph-left h1 { font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+.ph-left p  { font-size: 13px; color: var(--text3); margin-top: 3px; }
+.ph-right   { display: flex; gap: 10px; align-items: center; }
+
+/* ══════════════════════════════════════════════════
+   STAT CARDS (DASHBOARD)
+══════════════════════════════════════════════════ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sc {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.sc:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.sc-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.sc-icon {
+  width: 42px; height: 42px; border-radius: 11px;
+  display: grid; place-items: center; font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.sc-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 5px; }
+.sc-value { font-size: 24px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; line-height: 1; margin-bottom: 6px; }
+.sc-sub   { font-size: 11px; color: var(--text3); }
+
+.sc-trend {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; margin-top: 4px;
+  padding: 2px 7px; border-radius: 20px;
+}
+
+.sc-trend.up   { background: var(--green-l); color: var(--green); }
+.sc-trend.down { background: var(--red-l);   color: var(--red);   }
+
+/* ══════════════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════════════ */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header h3 { font-size: 14px; font-weight: 700; color: var(--navy); }
+.card-header p  { font-size: 12px; color: var(--text3); }
+.card-body      { padding: 22px; }
+
+/* ══════════════════════════════════════════════════
+   DATA TABLE
+══════════════════════════════════════════════════ */
+.dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+.dt thead tr { background: var(--surface2); }
+.dt th {
+  padding: 10px 16px; text-align: left;
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 1.2px; text-transform: uppercase;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.dt td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: middle;
+}
+
+.dt tbody tr:last-child td { border-bottom: none; }
+.dt tbody tr { transition: background var(--transition); }
+.dt tbody tr:hover { background: var(--surface2); }
+
+.dt-link { color: var(--blue); cursor: pointer; font-weight: 600; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.dt-link:hover { text-decoration: underline; }
+.dt-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.dt-amt  { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--navy); }
+
+/* ══════════════════════════════════════════════════
+   BADGES
+══════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+
+.badge-green  { background: var(--green-l); color: var(--green); }
+.badge-orange { background: var(--saffron-l); color: var(--saffron); }
+.badge-blue   { background: var(--blue-l); color: var(--blue); }
+.badge-red    { background: var(--red-l); color: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border: none; border-radius: var(--radius);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700;
+  transition: all var(--transition); cursor: pointer; white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--saffron), var(--saffron2));
+  color: white;
+  box-shadow: 0 4px 14px rgba(232,114,12,0.35);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,114,12,0.45); }
+
+.btn-navy   { background: var(--navy); color: white; }
+.btn-navy:hover { background: var(--navy2); transform: translateY(-1px); }
+
+.btn-outline {
+  background: white; color: var(--navy);
+  border: 1.5px solid var(--border2);
+}
+.btn-outline:hover { border-color: var(--navy); background: var(--surface2); }
+
+.btn-ghost  { background: var(--surface3); color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover  { background: var(--border); }
+
+.btn-green  { background: var(--green); color: white; box-shadow: 0 4px 14px rgba(12,173,106,0.3); }
+.btn-green:hover  { transform: translateY(-1px); opacity: 0.9; }
+
+.btn-danger { background: var(--red-l); color: var(--red); border: 1px solid rgba(232,58,58,0.2); }
+.btn-danger:hover { background: rgba(232,58,58,0.18); }
+
+.btn-sm { padding: 6px 13px; font-size: 12px; border-radius: 8px; }
+.btn-xs { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
+
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ══════════════════════════════════════════════════
+   FORM ELEMENTS
+══════════════════════════════════════════════════ */
+.fg { margin-bottom: 16px; }
+.fg label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px;
+}
+
+.fi {
+  width: 100%;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 13px;
+  color: var(--navy);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.fi:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px var(--saffron-l); }
+.fi::placeholder { color: var(--text4); }
+
+.fg-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fg-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* ══════════════════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════════════════ */
+.empty {
+  text-align: center; padding: 60px 20px;
+  color: var(--text3);
+}
+
+.empty-icon  { font-size: 48px; margin-bottom: 14px; opacity: 0.4; }
+.empty-title { font-size: 16px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+.empty-sub   { font-size: 13px; margin-bottom: 20px; }
+
+/* ══════════════════════════════════════════════════
+   SEARCH DROPDOWN
+══════════════════════════════════════════════════ */
+.srch-wrap { position: relative; }
+.srch-dd {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+  background: white; border: 1.5px solid var(--border2);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  max-height: 200px; overflow-y: auto; z-index: 100;
+  display: none;
+}
+
+.srch-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 13px; cursor: pointer; font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.srch-item:last-child { border-bottom: none; }
+.srch-item:hover { background: var(--surface2); }
+.srch-item .si-name { font-weight: 600; color: var(--navy); }
+.srch-item .si-meta { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+  display: none;
+  background: var(--navy); color: white;
+  padding: 13px 20px; border-radius: var(--radius-lg);
+  font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  animation: toastPop 0.3s cubic-bezier(.34,1.56,.64,1);
+  display: none; align-items: center; gap: 10px;
+}
+
+.td-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@keyframes toastPop {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ══════════════════════════════════════════════════
+   ██████  INVOICE DOCUMENT  ██████
+   Complete professional redesign — GST compliant,
+   clean, print-perfect
+══════════════════════════════════════════════════ */
+.inv-wrapper {
+  background: white;
+  box-shadow: 0 8px 40px rgba(15,30,61,0.15);
+  border-radius: 4px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  color: #000;
+}
+
+/* ── Invoice header ── */
+.inv-head {
+  display: flex;
+  padding: 20px 24px 16px;
+  border-bottom: 3px solid #0f1e3d;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.inv-head-logo { width: 80px; flex-shrink: 0; }
+.inv-head-logo img { width: 80px; }
+
+.inv-head-center { flex: 1; text-align: center; }
+.inv-head-center .namah { font-size: 11px; color: #555; font-style: italic; letter-spacing: 0.5px; margin-bottom: 2px; }
+.inv-head-center .biz-name { font-size: 26px; font-weight: 800; color: #0f1e3d; letter-spacing: -0.5px; margin-bottom: 2px; font-family: 'Plus Jakarta Sans', sans-serif; }
+.inv-head-center .biz-addr { font-size: 11px; color: #444; margin-bottom: 1px; }
+.inv-head-center .biz-gstin { font-size: 11px; font-weight: 800; color: #0f1e3d; letter-spacing: 0.5px; margin-top: 3px; }
+.inv-head-right { width: 130px; flex-shrink: 0; text-align: right; }
+
+.inv-title-bar {
+  background: #0f1e3d;
+  color: white;
+  text-align: center;
+  padding: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* ── Meta row ── */
+.inv-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid #000;
+}
+
+.inv-meta-cell {
+  padding: 8px 12px;
+  border-right: 1px solid #000;
+  font-size: 11px;
+}
+
+.inv-meta-cell:last-child { border-right: none; }
+.inv-meta-cell .ml { font-size: 10px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.inv-meta-cell .mv { font-weight: 700; color: #000; margin-top: 2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.inv-meta-cell input.mvi { background: transparent; border: none; outline: none; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #000; width: 100%; }
+
+/* ── Party details ── */
+.inv-parties { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #000; }
+
+.inv-party { padding: 10px 12px; }
+.inv-party + .inv-party { border-left: 1px solid #000; }
+
+.inv-party-title {
+  font-size: 10px; font-weight: 800; color: white;
+  background: #0f1e3d; padding: 4px 8px; margin: -10px -12px 8px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+
+.party-row { display: grid; grid-template-columns: 70px 1fr; gap: 4px; margin-bottom: 4px; align-items: start; }
+.party-lbl { font-size: 10px; color: #666; font-weight: 600; padding-top: 2px; }
+.party-val { font-size: 11px; font-weight: 600; color: #000; }
+.party-val input { width: 100%; border: none; border-bottom: 1px dashed #ccc; outline: none; font-size: 11px; font-weight: 600; color: #000; background: transparent; padding: 1px 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+.party-val input:focus { border-bottom-color: #e8720c; }
+
+.same-btn {
+  width: 100%; margin-top: 8px;
+  padding: 4px; background: #f0f2f7; border: 1px solid #ddd;
+  border-radius: 4px; font-size: 10px; color: #444;
+  cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ── Items table ── */
+.inv-items-table { width: 100%; border-collapse: collapse; }
+
+.inv-items-table th {
+  background: #0f1e3d; color: white;
+  padding: 8px 8px; text-align: center;
+  font-size: 11px; font-weight: 700;
+  border-right: 1px solid #2a3f6e;
+}
+
+.inv-items-table th:last-child { border-right: none; }
+
+.inv-items-table td {
+  border: 1px solid #ccc;
+  padding: 5px 6px; text-align: center;
+  font-size: 11px; color: #000;
+}
+
+.inv-items-table td input {
+  width: 100%; border: none; outline: none;
+  text-align: center; font-size: 11px; color: #000;
+  background: transparent; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.inv-items-table td input:focus { background: #fffde7; }
+
+.inv-items-table tr:nth-child(even) td { background: #fafbfd; }
+.inv-items-table tr:hover td { background: #fff8f0; }
+
+.add-row-btn {
+  width: 100%; padding: 7px; text-align: center;
+  background: #f7f8fc; border: 1px dashed #ccc; border-top: none;
+  cursor: pointer; font-size: 11px; color: #666;
+  transition: all 0.15s;
+}
+
+.add-row-btn:hover { background: #fff0e6; color: #e8720c; border-color: #e8720c; }
+
+/* ── Totals section ── */
+.inv-bottom { display: grid; grid-template-columns: 1fr 1fr; border-top: 2px solid #0f1e3d; }
+
+.inv-bank { padding: 12px 14px; border-right: 1px solid #000; font-size: 11px; }
+.inv-bank .bank-title { font-size: 10px; font-weight: 800; color: #0f1e3d; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+.inv-bank .bank-row { display: flex; gap: 6px; margin-bottom: 3px; }
+.inv-bank .brl { color: #666; font-weight: 600; min-width: 38px; font-size: 10px; }
+.inv-bank .brv { font-weight: 700; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+.inv-totals { padding: 12px 14px; font-size: 11px; }
+.inv-total-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee; }
+.inv-total-row:last-child { border-bottom: none; }
+.inv-total-row .trl { color: #444; font-weight: 600; }
+.inv-total-row .trv { font-weight: 700; color: #000; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.inv-total-row.grand { padding: 8px 0; margin-top: 4px; }
+.inv-total-row.grand .trl { font-size: 13px; font-weight: 800; color: #0f1e3d; }
+.inv-total-row.grand .trv { font-size: 16px; font-weight: 800; color: #e8720c; }
+.inv-total-row input.tr-input { width: 80px; border: 1px solid #ddd; border-radius: 4px; padding: 2px 6px; text-align: center; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #000; background: #fff; outline: none; }
+.inv-total-row input.tr-input:focus { border-color: #e8720c; }
+
+.inv-words {
+  padding: 8px 14px;
+  background: #f7f8fc; border-top: 1px solid #ddd;
+  font-size: 11px;
+}
+.inv-words .wl { font-size: 10px; font-weight: 800; color: #0f1e3d; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.inv-words .wv { font-weight: 600; color: #000; font-style: italic; }
+
+/* ── Terms & Signature ── */
+.inv-footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #000; }
+
+.inv-terms { padding: 10px 14px; border-right: 1px solid #000; font-size: 10px; color: #444; }
+.inv-terms .terms-title { font-weight: 800; color: #0f1e3d; font-size: 11px; margin-bottom: 5px; }
+.inv-terms p { margin-bottom: 3px; }
+
+.inv-sign { padding: 10px 14px; text-align: right; display: flex; flex-direction: column; justify-content: space-between; }
+.inv-sign .sign-for { font-size: 11px; font-weight: 700; color: #0f1e3d; }
+.inv-sign .sign-line { border-top: 1px solid #000; margin-top: 30px; padding-top: 4px; font-size: 10px; color: #666; }
+
+/* ══════════════════════════════════════════════════
+   INVOICE SCREEN LAYOUT
+══════════════════════════════════════════════════ */
+.inv-screen-layout { display: flex; gap: 22px; align-items: flex-start; }
+.inv-screen-left   { flex: 1; min-width: 0; }
+.inv-screen-right  { width: 285px; flex-shrink: 0; }
+
+/* Action bar */
+.inv-action-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 12px 16px; margin-bottom: 16px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+
+.inv-action-bar .bar-title { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-right: 6px; }
+
+/* Right sidebar cards */
+.rs-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); padding: 18px;
+  margin-bottom: 16px; border: 1px solid var(--border);
+}
+
+.rs-card h4 {
+  font-size: 12px; font-weight: 800; color: var(--navy);
+  letter-spacing: 0.3px; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+
+.rs-card .fg { margin-bottom: 10px; }
+.rs-card .fg label { font-size: 10px; }
+.rs-card .fi { font-size: 12px; padding: 8px 11px; }
+
+/* ══════════════════════════════════════════════════
+   PRINT
+══════════════════════════════════════════════════ */
+@media print {
+  body * { visibility: hidden; }
+  #inv-doc, #inv-doc * { visibility: visible; }
+  #inv-doc .no-print { display: none !important; }
+  #inv-doc button { display: none !important; }
+  #inv-doc { position: absolute; left: 0; top: 0; width: 100%; }
+  @page { size: A4; margin: 10mm; }
+
+  .inv-wrapper, .inv-wrapper * {
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .inv-head-center .biz-name { color: #0f1e3d !important; }
+  .inv-title-bar { background: #0f1e3d !important; color: white !important; }
+  .inv-party-title { background: #0f1e3d !important; color: white !important; }
+  .inv-items-table th { background: #0f1e3d !important; color: white !important; }
+  .inv-total-row.grand .trv { color: #e8720c !important; }
+  
+  #inv-doc input { color: #000 !important; -webkit-text-fill-color: #000 !important; background: transparent !important; border: none !important; }
+}
+
+/* Nuclear override for on-screen invoice inputs */
+#inv-doc input {
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  background: transparent !important;
+}
+
+#inv-doc input:focus {
+  background: #fffde7 !important;
+}
+
+/* ══════════════════════════════════════════════════
+   LEDGER VIEW (Tally-inspired)
+══════════════════════════════════════════════════ */
+.ledger-strip {
+  display: flex;
+  background: var(--navy);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  gap: 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ls-item { text-align: center; }
+.ls-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+.ls-val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: white; }
+.ls-val.green { color: #4ade80; }
+.ls-val.red   { color: #f87171; }
+.ls-val.gold  { color: var(--saffron2); }
+
+/* ══════════════════════════════════════════════════
+   QUICK ACTION CARDS
+══════════════════════════════════════════════════ */
+.qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+.qa-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; border: 2px solid transparent;
+  box-shadow: var(--shadow);
+  transition: all var(--transition); text-align: center;
+}
+
+.qa-card:hover { border-color: var(--saffron); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.qa-card .qac-icon { font-size: 24px; }
+.qa-card .qac-label { font-size: 12px; font-weight: 700; color: var(--navy); }
+.qa-card .qac-sub   { font-size: 10px; color: var(--text3); }
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD GRID
+══════════════════════════════════════════════════ */
+.dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+/* Mini bar chart */
+.mini-chart { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 14px; }
+.mc-bar { flex: 1; border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.6s ease; cursor: pointer; position: relative; }
+.mc-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+
+</style>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- ══════════ TOP BAR ══════════ -->
+<div class="topbar">
+  <div class="tb-logo-area">
+    <div class="tb-logo-icon">🧵</div>
+    <div>
+      <div class="tb-logo-text"><span>BALAJI</span> TEXTILES</div>
+      <div class="tb-logo-sub">Billing Suite</div>
+    </div>
+  </div>
+
+  <div class="tb-middle">
+    <div class="tb-search">
+      <span class="tb-search-icon">🔍</span>
+      <input placeholder="Search invoices, customers, products…" id="globalSearch" onkeyup="globalSearchFn()">
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <div class="tb-date" id="liveDate"></div>
+    <div id="sync-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.6)"><div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#6b7280"></div><span id="sync-label">Offline</span></div><div class="tb-gst-badge">✓ GST Active</div>
+    <div style="position:relative">
+  <div class="tb-avatar" onclick="toggleUserMenu()" style="cursor:pointer" title="Account">B</div>
+  <div id="user-menu" style="display:none;position:absolute;right:0;top:44px;background:white;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.2);min-width:180px;z-index:9999;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
+    <div style="padding:14px 16px;border-bottom:1px solid #eee;font-size:12px;font-weight:700;color:#0f1e3d">BALAJI TEXTILES</div>
+    <div style="padding:4px">
+      <button onclick="lockApp()" style="width:100%;padding:10px 12px;background:none;border:none;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#3d5080;font-family:inherit;">🔒 Lock App</button>
+      <button onclick="resetSetup()" style="width:100%;padding:10px 12px;background:none;border:none;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#e83a3a;font-family:inherit;">⚙️ Reset Cloud Setup</button>
+    </div>
+  </div>
+</div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-scroll">
+
+      <div class="nav-group-label">Main</div>
+
+      <button class="nav-item active" id="nav-dash" onclick="nav('dashboardScreen', showDashboard, this)">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+
+      <div class="nav-group-label">Sales</div>
+
+      <button class="nav-item" id="nav-create" onclick="nav('invoiceScreen', createInvoice, this)">
+        <span class="nav-icon">➕</span> Create Invoice
+      </button>
+      <button class="nav-item" id="nav-hist" onclick="nav('invoiceScreen', showHistory, this)">
+        <span class="nav-icon">📋</span> Invoice History
+        <span class="nav-badge" id="inv-count">0</span>
+      </button>
+
+      <div class="nav-group-label">Purchases</div>
+
+      <button class="nav-item" id="nav-purch" onclick="nav('purchaseScreen', showPurchaseMenu, this)">
+        <span class="nav-icon">🏷️</span> Purchases
+        <span class="nav-badge" id="purch-count">0</span>
+      </button>
+
+      <div class="nav-group-label">Masters</div>
+
+      <button class="nav-item" id="nav-prod" onclick="nav('productScreen', showProducts, this)">
+        <span class="nav-icon">📦</span> Products
+        <span class="nav-badge" id="prod-count">0</span>
+      </button>
+      <button class="nav-item" id="nav-cust" onclick="nav('customerScreen', showCustomers, this)">
+        <span class="nav-icon">👥</span> Customers
+        <span class="nav-badge" id="cust-count">0</span>
+      </button>
+
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-gstin">
+        <div class="lbl">GSTIN</div>
+        <div class="val">36EQIPS6342K1Z7</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+  <div class="main">
+    <div id="dashboardScreen"  class="screen active"></div>
+    <div id="invoiceScreen"    class="screen"></div>
+    <div id="purchaseScreen"   class="screen"></div>
+    <div id="customerScreen"   class="screen"></div>
+    <div id="productScreen"    class="screen"></div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="display:none;">
+  <div class="td-dot" id="td-dot"></div>
+  <span id="td-msg"></span>
+</div>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════╗
+   ║   STEP 1 — PASTE YOUR FIREBASE CONFIG HERE               ║
+   ║   Do this once, then redeploy. Works on ALL devices.     ║
+   ╚══════════════════════════════════════════════════════════╝
+
+   How to get this config:
+   1. Go to https://console.firebase.google.com
+   2. Open your project → ⚙️ Settings → Project Settings
+   3. Scroll down → Click </> (Web) → Copy the firebaseConfig object
+   4. Paste it below replacing the null value
+   5. Run: firebase deploy
+*/
+
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAtPEDYE-eUmcLAemd6C3bU0Q4eoTWBssg",
+    authDomain: "mypro-d654f.firebaseapp.com",
+    databaseURL: "https://mypro-d654f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "mypro-d654f",
+    storageBucket: "mypro-d654f.firebasestorage.app",
+    messagingSenderId: "243311351506",
+    appId: "1:243311351506:web:2a52751d61b6759da23f0b",
+    measurementId: "G-VW2M2M49VV"
+  }; // ← PASTE YOUR CONFIG HERE
+/* Example — replace the null above with your actual config:
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdefabcdef"
+};
+*/
+
+/* ═══════════════════════════════════════
+   FIREBASE CLOUD DATA LAYER
+   ─ Config hardcoded above → works on any device
+   ─ Falls back to localStorage if offline
+═══════════════════════════════════════ */
+
+let db = null;         // Firebase database instance
+let isOnline = false;  // Cloud connection status
+
+// In-memory data (loaded from cloud or localStorage)
+let invoices  = [];
+let products  = [];
+let customers = [];
+let purchases = [];
+let invoiceNo = 2077;
+
+const indianStates = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"].sort();
+
+/* ── Firebase init ── */
+function initFirebase(config) {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
+    db = firebase.database();
+    return true;
+  } catch(e) {
+    console.error("Firebase init error:", e);
+    return false;
+  }
+}
+
+/* ── Save ONE collection to Firebase + localStorage ── */
+async function save(key, val) {
+  // Always save to localStorage first (instant, offline)
+  localStorage.setItem(key, JSON.stringify(val));
+
+  // Then sync to Firebase cloud
+  if (db && isOnline) {
+    try {
+      await db.ref('balaji/' + key).set(val);
+    } catch(e) {
+      setSyncStatus('error');
+      console.warn("Cloud sync failed:", e);
+    }
+  }
+}
+
+/* ── Save invoiceNo separately ── */
+async function saveInvNo(n) {
+  invoiceNo = n;
+  localStorage.setItem("ksInvoiceNo", n);
+  if (db && isOnline) {
+    try {
+      await db.ref('balaji/invoiceNo').set(n);
+    } catch(e) {}
+  }
+}
+
+/* ── Load ALL data from Firebase (or localStorage fallback) ── */
+async function loadAllData() {
+  if (db && isOnline) {
+    try {
+      setSyncStatus('syncing');
+      const snap = await db.ref('balaji').get();
+      if (snap.exists()) {
+        const d = snap.val();
+        invoices  = d.ksInvoices  || [];
+        products  = d.ksProducts  || [];
+        customers = d.ksCustomers || [];
+        purchases = d.ksPurchases || [];
+        invoiceNo = d.invoiceNo   || 2077;
+        // Also cache locally
+        localStorage.setItem("ksInvoices",  JSON.stringify(invoices));
+        localStorage.setItem("ksProducts",  JSON.stringify(products));
+        localStorage.setItem("ksCustomers", JSON.stringify(customers));
+        localStorage.setItem("ksPurchases", JSON.stringify(purchases));
+        saveInvNo(invoiceNo);
+      } else {
+        // First time on this device — push existing local data to cloud
+        await pushLocalToCloud();
+      }
+      setSyncStatus('online');
+    } catch(e) {
+      console.warn("Cloud load failed, using local:", e);
+      loadFromLocal();
+      setSyncStatus('error');
+    }
+  } else {
+    loadFromLocal();
+  }
+}
+
+function loadFromLocal() {
+  invoices  = JSON.parse(localStorage.getItem("ksInvoices"))  || [];
+  products  = JSON.parse(localStorage.getItem("ksProducts"))  || [];
+  customers = JSON.parse(localStorage.getItem("ksCustomers")) || [];
+  purchases = JSON.parse(localStorage.getItem("ksPurchases")) || [];
+  invoiceNo = parseInt(localStorage.getItem("ksInvoiceNo"))   || 2077;
+}
+
+async function pushLocalToCloud() {
+  loadFromLocal();
+  if (db) {
+    try {
+      await db.ref('balaji').set({
+        ksInvoices:  invoices,
+        ksProducts:  products,
+        ksCustomers: customers,
+        ksPurchases: purchases,
+        invoiceNo:   invoiceNo
+      });
+    } catch(e) {}
+  }
+}
+
+/* ── Sync status UI ── */
+function setSyncStatus(status) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  const map = {
+    online:  { color:'#4ade80', text:'Synced ✓' },
+    syncing: { color:'#fbbf24', text:'Syncing…' },
+    error:   { color:'#f87171', text:'Offline'  },
+  };
+  const s = map[status] || map.error;
+  dot.style.background = s.color;
+  label.textContent    = s.text;
+  label.style.color    = s.color;
+}
+
+/* ══════════════════════════════════════════
+   PIN & SETUP SYSTEM
+══════════════════════════════════════════ */
+function pinMove(el, nextId) {
+  if (el.value && nextId) document.getElementById(nextId)?.focus();
+}
+
+function pinBack(e, prevId, el) {
+  if (e.key === 'Backspace' && !el.value && prevId) {
+    document.getElementById(prevId)?.focus();
+  }
+}
+
+function getPin(prefix) {
+  return ['d1','d2','d3','d4'].map(d => document.getElementById(prefix+d)?.value || '').join('');
+}
+
+/* Simple hash for PIN storage */
+async function hashPin(pin) {
+  const msgBuffer = new TextEncoder().encode(pin + 'balaji_salt_2024');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray  = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('').slice(0,16);
+}
+
+async function submitPIN() {
+  const pin = getPin('pin-');
+  if (pin.length < 4) { showPinError('pin-error', 'Enter all 4 digits'); return; }
+
+  // Use hardcoded config from top of file
+  const configToUse = FIREBASE_CONFIG || (() => {
+    try { return JSON.parse(localStorage.getItem('fbConfig')); } catch(e) { return null; }
+  })();
+
+  if (!configToUse) {
+    showStep('s-firebase');
+    return;
+  }
+
+  if (!db) {
+    const ok = initFirebase(configToUse);
+    if (!ok) {
+      showPinError('pin-error', 'Firebase failed to start. Check config.');
+      return;
+    }
+    isOnline = true;
+  }
+
+  const inputHash = await hashPin(pin);
+
+  let cloudHash = null;
+  try {
+    const snap = await db.ref('balaji/pinHash').get();
+    if (snap.exists()) cloudHash = snap.val();
+  } catch(e) {
+    cloudHash = localStorage.getItem('pinHash') || null;
+  }
+
+  if (!cloudHash) {
+    showStep('s-create-pin');
+    return;
+  }
+
+  if (cloudHash !== inputHash) {
+    showPinError('pin-error', 'Incorrect PIN. Try again.');
+    clearPins('pin-');
+    return;
+  }
+
+  localStorage.setItem('pinHash', cloudHash);
+  await loadAndOpenApp();
+}
+
+async function connectFirebase() {
+  const raw = document.getElementById('fb-config-input').value.trim();
+  const errEl = document.getElementById('fb-error');
+  errEl.style.display = 'none';
+
+  if (!raw) { showFbError('Paste your Firebase config first'); return; }
+
+  // Clean the config text (remove "const firebaseConfig = " etc)
+  let cleaned = raw;
+  cleaned = cleaned.replace(/const\s+firebaseConfig\s*=\s*/g, '');
+  cleaned = cleaned.replace(/var\s+firebaseConfig\s*=\s*/g, '');
+  cleaned = cleaned.replace(/let\s+firebaseConfig\s*=\s*/g, '');
+  cleaned = cleaned.replace(/;\s*$/g, '');
+  // Convert JS object to JSON
+  cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+
+  let config;
+  try {
+    config = JSON.parse(cleaned);
+  } catch(e) {
+    showFbError('Invalid config format. Make sure you copied the full firebaseConfig object (with curly braces { }).');
+    return;
+  }
+
+  if (!config.apiKey || !config.databaseURL) {
+    showFbError('Missing required fields. Make sure your project has Realtime Database enabled and databaseURL is present.');
+    return;
+  }
+
+  // Test connection
+  try {
+    if (!initFirebase(config)) throw new Error("Init failed");
+    const testRef = db.ref('.info/connected');
+    const connected = await new Promise((resolve) => {
+      const unsub = testRef.on('value', snap => {
+        testRef.off('value', unsub);
+        resolve(snap.val());
+      });
+      setTimeout(() => { testRef.off('value', unsub); resolve(false); }, 8000);
+    });
+
+    if (!connected) throw new Error("Could not connect");
+
+    isOnline = true;
+    localStorage.setItem('fbConfig', JSON.stringify(config));
+    showStep('s-create-pin');
+
+  } catch(e) {
+    showFbError('Connection failed. Check: (1) databaseURL is correct, (2) Database is in Test Mode, (3) Internet is working. Error: ' + e.message);
+  }
+}
+
+async function createPIN() {
+  const pin    = getPin('np-');
+  const pinCon = getPin('cp-');
+  const errEl  = document.getElementById('cp-error');
+  errEl.style.display = 'none';
+
+  if (pin.length < 4)    { errEl.textContent='Enter 4 digits for PIN';   errEl.style.display='block'; return; }
+  if (pin !== pinCon)    { errEl.textContent="PINs don't match";          errEl.style.display='block'; return; }
+
+  const hashed = await hashPin(pin);
+  localStorage.setItem('pinHash', hashed);
+  // Save to cloud
+  if (db) await db.ref('balaji/pinHash').set(hashed);
+
+  await loadAndOpenApp();
+}
+
+async function loadAndOpenApp() {
+  await loadAllData();
+  document.getElementById('setup-overlay').style.display = 'none';
+  updateCounts();
+  showDashboard();
+  document.querySelector('.nav-item').classList.add('active');
+}
+
+function showStep(id) {
+  ['s-welcome','s-firebase','s-create-pin'].forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function showPinError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function showFbError(msg) {
+  const el = document.getElementById('fb-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function clearPins(prefix) {
+  ['d1','d2','d3','d4'].forEach(d => {
+    const el = document.getElementById(prefix+d);
+    if (el) el.value = '';
+  });
+  document.getElementById(prefix+'d1')?.focus();
+}
+
+/* ── AUTO STARTUP ── */
+window.addEventListener('DOMContentLoaded', () => {
+  // If config is hardcoded at top of file, auto-init Firebase silently
+  if (FIREBASE_CONFIG) {
+    initFirebase(FIREBASE_CONFIG);
+    isOnline = true;
+  }
+  showStep('s-welcome');
+
+  // Show config status
+  const bar = document.getElementById('config-status-bar');
+  if (bar) {
+    if (FIREBASE_CONFIG) {
+      bar.textContent = '☁️ Cloud Ready — Any Device Access Enabled';
+      bar.style.cssText += 'background:rgba(12,173,106,0.2);color:#4ade80;border:1px solid rgba(12,173,106,0.3)';
+    } else {
+      bar.textContent = '⚠️ Config Not Set — Open on Your Computer to Setup';
+      bar.style.cssText += 'background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)';
+    }
+  }
+
+  setTimeout(() => document.getElementById('pin-d1')?.focus(), 100);
+});
+
+// indianStates defined above
+
+/* ═══════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════ */
+function fmt(n)  { return parseFloat(n||0).toLocaleString('en-IN'); }
+function fmtRs(n){ return '₹' + fmt(n); }
+
+let toastTimer;
+function toast(msg, type="info") {
+  const colors = { success:"#0cad6a", error:"#e83a3a", info:"#e8720c", warn:"#f59e0b" };
+  const el = document.getElementById("toast");
+  document.getElementById("td-msg").textContent = msg;
+  document.getElementById("td-dot").style.background = colors[type];
+  el.style.display = "flex";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = "none", 3200);
+}
+
+function updateCounts() {
+  document.getElementById("inv-count").textContent   = invoices.length;
+  document.getElementById("prod-count").textContent  = products.length;
+  document.getElementById("cust-count").textContent  = customers.length;
+  document.getElementById("purch-count").textContent = purchases.length;
+}
+
+function updateDate() {
+  const el = document.getElementById("liveDate");
+  if (el) el.textContent = new Date().toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+
+updateDate(); setInterval(updateDate, 60000);
+
+function toggleAll(sel, master) {
+  document.querySelectorAll(sel).forEach(cb => cb.checked = master.checked);
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+function nav(screenId, fn, btn) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(screenId).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  fn();
+  updateCounts();
+}
+
+/* ═══════════════════════════════════════
+   GLOBAL SEARCH (QuickBooks-style)
+═══════════════════════════════════════ */
+function globalSearchFn() {
+  const q = document.getElementById("globalSearch").value.trim().toLowerCase();
+  if (!q) return;
+  const inv = invoices.find(i => i.number.toLowerCase().includes(q));
+  if (inv) {
+    nav('invoiceScreen', showHistory, document.getElementById("nav-hist"));
+    setTimeout(() => toast(`Found: ${inv.number}`, "info"), 300);
+  }
+}
+
+/* ═══════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════ */
+function showDashboard() {
+  const totalSales    = invoices.reduce((s, i)  => s + parseFloat(i.total  || 0), 0);
+  const totalPurchase = purchases.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+  const profit        = totalSales - totalPurchase;
+  const thisMonth     = new Date().toISOString().slice(0,7);
+  const monthInvs     = invoices.filter(i => (i.date||"").startsWith(thisMonth));
+  const monthSales    = monthInvs.reduce((s,i) => s + parseFloat(i.total||0), 0);
+
+  // last 6 months bar data
+  const barData = [];
+  for (let m = 5; m >= 0; m--) {
+    const d = new Date(); d.setMonth(d.getMonth() - m);
+    const key = d.toISOString().slice(0,7);
+    const sum = invoices.filter(i => (i.date||"").startsWith(key)).reduce((s,i) => s + parseFloat(i.total||0), 0);
+    barData.push({ month: d.toLocaleDateString('en-IN',{month:'short'}), val: sum });
+  }
+  const maxBar = Math.max(...barData.map(b => b.val), 1);
+
+  const recentRows = invoices.slice().reverse().slice(0,7).map(inv => `
+    <tr>
+      <td><span class="dt-link" onclick="nav('invoiceScreen', showHistory, document.getElementById('nav-hist'))">${inv.number}</span></td>
+      <td><div style="font-weight:600;color:var(--navy)">${inv.customer||'—'}</div></td>
+      <td style="color:var(--text3)">${inv.date||'—'}</td>
+      <td class="dt-amt">${fmtRs(inv.total)}</td>
+      <td><span class="badge badge-green">✓ Saved</span></td>
+    </tr>`).join('') || `<tr><td colspan="5"><div class="empty"><div class="empty-icon">🧾</div><div class="empty-title">No invoices yet</div><div class="empty-sub">Create your first invoice</div></div></td></tr>`;
+
+  document.getElementById("dashboardScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left">
+        <h1>Dashboard</h1>
+        <p>Welcome back — ${new Date().toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'})}</p>
+      </div>
+      <div class="ph-right">
+        <button class="btn btn-primary" onclick="nav('invoiceScreen', createInvoice, document.getElementById('nav-create'))">
+          ➕ New Invoice
+        </button>
+      </div>
+    </div>
+
+    <!-- LEDGER STRIP (Tally-style) -->
+    <div class="ledger-strip">
+      <div class="ls-item">
+        <div class="ls-label">Total Sales</div>
+        <div class="ls-val gold">${fmtRs(totalSales)}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">Total Purchase</div>
+        <div class="ls-val">${fmtRs(totalPurchase)}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">Net Profit</div>
+        <div class="ls-val ${profit>=0?'green':'red'}">${fmtRs(Math.abs(profit))} ${profit<0?'▼':'▲'}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">This Month Sales</div>
+        <div class="ls-val gold">${fmtRs(monthSales)}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">Total Invoices</div>
+        <div class="ls-val">${invoices.length}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">Customers</div>
+        <div class="ls-val">${customers.length}</div>
+      </div>
+      <div class="ls-item">
+        <div class="ls-label">Products</div>
+        <div class="ls-val">${products.length}</div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#e8720c,#ff8c2a)"></div>
+        <div class="sc-icon" style="background:#fff3e0">🧾</div>
+        <div class="sc-label">Total Invoices</div>
+        <div class="sc-value">${invoices.length}</div>
+        <div class="sc-sub">${monthInvs.length} this month</div>
+        <div class="sc-trend up">▲ Active</div>
+      </div>
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#0cad6a,#00d4aa)"></div>
+        <div class="sc-icon" style="background:#e8faf3">💰</div>
+        <div class="sc-label">Total Sales</div>
+        <div class="sc-value" style="font-size:18px">${fmtRs(totalSales)}</div>
+        <div class="sc-sub">Lifetime revenue</div>
+        <div class="sc-trend up">▲ GST Inclusive</div>
+      </div>
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
+        <div class="sc-icon" style="background:#eff6ff">🏷️</div>
+        <div class="sc-label">Total Purchase</div>
+        <div class="sc-value" style="font-size:18px">${fmtRs(totalPurchase)}</div>
+        <div class="sc-sub">${purchases.length} records</div>
+        <div class="sc-trend ${profit>=0?'up':'down'}">${profit>=0?'▲':'▼'} ${profit>=0?'Profitable':'Loss'}</div>
+      </div>
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,${profit>=0?'#0cad6a,#00d4aa':'#e83a3a,#ff6b6b'})"></div>
+        <div class="sc-icon" style="background:${profit>=0?'#e8faf3':'#fff0f0'}">${profit>=0?'📈':'📉'}</div>
+        <div class="sc-label">Net Profit</div>
+        <div class="sc-value" style="font-size:18px;color:${profit>=0?'var(--green)':'var(--red)'}">${fmtRs(Math.abs(profit))}</div>
+        <div class="sc-sub">Sales − Purchases</div>
+        <div class="sc-trend ${profit>=0?'up':'down'}">${profit>=0?'▲ Profit':'▼ Loss'}</div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS (Vyapar-style) -->
+    <div class="qa-grid">
+      <div class="qa-card" onclick="nav('invoiceScreen', createInvoice, document.getElementById('nav-create'))">
+        <div class="qac-icon">🧾</div>
+        <div class="qac-label">New Invoice</div>
+        <div class="qac-sub">Create & send</div>
+      </div>
+      <div class="qa-card" onclick="nav('purchaseScreen', addNewPurchase, document.getElementById('nav-purch'))">
+        <div class="qac-icon">🏷️</div>
+        <div class="qac-label">Add Purchase</div>
+        <div class="qac-sub">Record expenses</div>
+      </div>
+      <div class="qa-card" onclick="nav('productScreen', addProductForm, document.getElementById('nav-prod'))">
+        <div class="qac-icon">📦</div>
+        <div class="qac-label">Add Product</div>
+        <div class="qac-sub">Update catalog</div>
+      </div>
+      <div class="qa-card" onclick="nav('customerScreen', addCustomerForm, document.getElementById('nav-cust'))">
+        <div class="qac-icon">👤</div>
+        <div class="qac-label">Add Customer</div>
+        <div class="qac-sub">Build your list</div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT GRID -->
+    <div class="dash-grid">
+      <!-- Recent Invoices -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Recent Invoices</h3>
+            <p>${invoices.length} total</p>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="nav('invoiceScreen',showHistory,document.getElementById('nav-hist'))">View All →</button>
+        </div>
+        <table class="dt">
+          <thead><tr>
+            <th>Invoice</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th>
+          </tr></thead>
+          <tbody>${recentRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Right side -->
+      <div>
+        <!-- Sales Chart -->
+        <div class="card">
+          <div class="card-header"><h3>📊 Sales (6 Months)</h3></div>
+          <div class="card-body" style="padding-bottom:16px">
+            <div class="mini-chart">
+              ${barData.map(b => `
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px">
+                  <div class="mc-bar" data-val="${fmtRs(b.val)}"
+                    style="height:${b.val ? Math.max(8, Math.round((b.val/maxBar)*56)) : 4}px;
+                    background:${b.val > 0 ? 'linear-gradient(180deg,#e8720c,#ff8c2a)' : 'var(--border)'}; width:100%">
+                  </div>
+                  <div style="font-size:9px;color:var(--text3);font-weight:600">${b.month}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Business Card -->
+        <div class="card">
+          <div class="card-header"><h3>🏪 Business Details</h3></div>
+          <div class="card-body" style="padding:16px 20px">
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:12px">
+              ${[
+                ['Next Invoice', `INV-${invoiceNo}`],
+                ['GSTIN', '36EQIPS6342K1Z7'],
+                ['Bank', 'KOTAK MAHINDRA'],
+                ['A/C', '3547331521'],
+                ['IFSC', 'KKBK0008392'],
+              ].map(([l,v]) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+                  <span style="color:var(--text3);font-weight:600">${l}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy);font-size:11px">${v}</span>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════
+   CREATE INVOICE
+═══════════════════════════════════════ */
+function createInvoice() {
+  document.getElementById("invoiceScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left">
+        <h1>Create Invoice</h1>
+        <p>Invoice No: <strong style="color:var(--saffron);font-family:'JetBrains Mono',monospace">INV-${invoiceNo}</strong></p>
+      </div>
+    </div>
+
+    <div class="inv-screen-layout">
+
+      <!-- LEFT: Action + Invoice Doc -->
+      <div class="inv-screen-left">
+
+        <!-- Action Bar -->
+        <div class="inv-action-bar no-print">
+          <span class="bar-title">Actions:</span>
+          <button class="btn btn-ghost btn-sm" onclick="calcTotals()">⟳ Recalc</button>
+          <button class="btn btn-navy btn-sm" onclick="saveInvoice()">💾 Save</button>
+          <button class="btn btn-primary btn-sm" onclick="downloadPDF()">⬇ PDF</button>
+          <button class="btn btn-sm" style="background:var(--green);color:white" onclick="printInvoice()">🖨 Print</button>
+        </div>
+
+        <!-- ████ PROFESSIONAL INVOICE DOC ████ -->
+        <div id="inv-doc">
+        <div class="inv-wrapper">
+
+          <!-- Header -->
+          <div class="inv-head">
+            <div class="inv-head-logo">
+              <img src="logo.jpeg" onerror="this.style.display='none'" style="width:80px">
+            </div>
+            <div class="inv-head-center">
+              <div class="namah">॥ Shree Ganeshaya Namah ॥</div>
+              <div class="biz-name">BALAJI TEXTILES</div>
+              <div class="biz-addr">1-362, Main Market, Station Road, Medchal, Hyderabad – 501401</div>
+              <div class="biz-addr">📞 9704797305 &nbsp;|&nbsp; ✉ gojenaveen16@gmail.com</div>
+              <div class="biz-gstin">GSTIN: 36EQIPS6342K1Z7</div>
+            </div>
+            <div class="inv-head-right"></div>
+          </div>
+
+          <!-- Title Bar -->
+          <div class="inv-title-bar">TAX INVOICE</div>
+
+          <!-- Meta Row -->
+          <div class="inv-meta">
+            <div class="inv-meta-cell">
+              <div class="ml">Invoice No</div>
+              <div class="mv">INV-${invoiceNo}</div>
+            </div>
+            <div class="inv-meta-cell">
+              <div class="ml">Invoice Date</div>
+              <input class="mvi" type="date" id="inv-date">
+            </div>
+            <div class="inv-meta-cell">
+              <div class="ml">Transport</div>
+              <input class="mvi" id="inv-transport" value="VRL LOGISTICS LTD.">
+            </div>
+          </div>
+
+          <!-- Party Details -->
+          <div class="inv-parties">
+            <div class="inv-party">
+              <div class="inv-party-title">Bill To (Receiver)</div>
+              <div class="party-row"><div class="party-lbl">Name</div><div class="party-val"><input id="rName" placeholder="Customer name"></div></div>
+              <div class="party-row"><div class="party-lbl">GSTIN</div><div class="party-val"><input id="rGst" placeholder="GSTIN / PAN"></div></div>
+              <div class="party-row"><div class="party-lbl">Address</div><div class="party-val"><input id="rAddress" placeholder="Full address"><input id="rPin" placeholder="PIN Code" style="margin-top:3px;width:100px;"></div></div>
+              <div class="party-row"><div class="party-lbl">State</div><div class="party-val"><input id="rState" value="Telangana"></div></div>
+            </div>
+            <div class="inv-party">
+              <div class="inv-party-title">Ship To (Consignee)</div>
+              <div class="party-row"><div class="party-lbl">Name</div><div class="party-val"><input id="cName" placeholder="Consignee name"></div></div>
+              <div class="party-row"><div class="party-lbl">GSTIN</div><div class="party-val"><input id="cGst" placeholder="GSTIN / PAN"></div></div>
+              <div class="party-row"><div class="party-lbl">Address</div><div class="party-val"><input id="cAddress" placeholder="Full address"><input id="cPin" placeholder="PIN Code" style="margin-top:3px;width:100px;"></div></div>
+              <div class="party-row"><div class="party-lbl">State</div><div class="party-val"><input id="cState" value="Telangana"></div></div>
+              <button class="same-btn no-print" onclick="copyBillToShip()">↕ Same as Bill To</button>
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <table class="inv-items-table" id="inv-items">
+            <thead>
+              <tr>
+                <th style="width:35px">Sr</th>
+                <th style="width:160px">Item Description</th>
+                <th style="width:70px">HSN</th>
+                <th style="width:50px">Qty</th>
+                <th style="width:70px">Rate (₹)</th>
+                <th style="width:70px">Discount</th>
+                <th style="width:80px">Amount (₹)</th>
+                <th class="no-print" style="width:35px">Del</th>
+              </tr>
+            </thead>
+            <tbody id="inv-tbody">
+            </tbody>
+          </table>
+          <button class="add-row-btn no-print" onclick="addRow()">+ Add Item Row</button>
+
+          <!-- Bottom Section -->
+          <div class="inv-bottom">
+            <div class="inv-bank">
+              <div class="bank-title">Bank Details</div>
+              <div class="bank-row"><div class="brl">Bank</div><div class="brv">KOTAK MAHINDRA BANK</div></div>
+              <div class="bank-row"><div class="brl">A/C</div><div class="brv">3547331521</div></div>
+              <div class="bank-row"><div class="brl">IFSC</div><div class="brv">KKBK0008392</div></div>
+            </div>
+            <div class="inv-totals">
+              <div class="inv-total-row">
+                <div class="trl">Sub Total</div>
+                <div class="trv" id="t-sub">₹0.00</div>
+              </div>
+              <div class="inv-total-row">
+                <div class="trl">Extra Charges</div>
+                <input class="tr-input" type="number" id="t-extra" value="0" onchange="calcTotals()">
+              </div>
+              <div class="inv-total-row">
+                <div class="trl">IGST <input class="tr-input" type="number" id="t-igst-pct" value="5" onchange="calcTotals()" style="width:50px"> %</div>
+                <div class="trv" id="t-igst">₹0.00</div>
+              </div>
+              <div class="inv-total-row grand">
+                <div class="trl">TOTAL</div>
+                <div class="trv" id="t-grand">₹0.00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Amount in words -->
+          <div class="inv-words">
+            <div class="wl">Amount in Words</div>
+            <div class="wv" id="t-words">Zero Rupees Only</div>
+          </div>
+
+          <!-- Footer -->
+          <div class="inv-footer">
+            <div class="inv-terms">
+              <div class="terms-title">Terms &amp; Conditions</div>
+              <p>1) Payment due within 30 days of invoice date.</p>
+              <p>2) Interest @ 24% p.a. after due date.</p>
+              <p>3) Goods once sold will not be taken back.</p>
+              <p>4) Subject to Hyderabad jurisdiction.</p>
+            </div>
+            <div class="inv-sign">
+              <div class="sign-for">For BALAJI TEXTILES</div>
+              <div class="sign-line">Authorized Signatory</div>
+            </div>
+          </div>
+
+        </div><!-- inv-wrapper -->
+        </div><!-- inv-doc -->
+
+      </div><!-- inv-screen-left -->
+
+      <!-- RIGHT PANEL -->
+      <div class="inv-screen-right no-print">
+
+        <!-- Quick Add Product (Vyapar-style) -->
+        <div class="rs-card">
+          <h4>⚡ Quick Add Product</h4>
+
+          <div class="fg srch-wrap">
+            <label>Search Product</label>
+            <input class="fi" type="text" id="p-search" onkeyup="searchProd()" placeholder="Type product name…">
+            <div class="srch-dd" id="p-results"></div>
+          </div>
+
+          <div class="fg">
+            <label>Product Name</label>
+            <input class="fi" id="p-name" placeholder="—">
+          </div>
+
+          <div class="fg-grid2" style="gap:8px">
+            <div class="fg">
+              <label>Rate (₹)</label>
+              <input class="fi" type="number" id="p-rate" placeholder="0">
+            </div>
+            <div class="fg">
+              <label>Disc %</label>
+              <input class="fi" type="number" id="p-disc" placeholder="0">
+            </div>
+          </div>
+
+          <div class="fg">
+            <label>Quantity</label>
+            <input class="fi" type="number" id="p-qty" value="1">
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="addProductToInvoice()">➕ Add to Invoice</button>
+        </div>
+
+        <!-- Customer (Zoho-style) -->
+        <div class="rs-card">
+          <h4>👤 Customer</h4>
+
+          <div class="fg srch-wrap">
+            <label>Search Customer</label>
+            <input class="fi" type="text" id="c-search" onkeyup="searchCust()" placeholder="Type name…">
+            <div class="srch-dd" id="c-results"></div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;margin:10px 0">
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span style="font-size:10px;color:var(--text3);font-weight:700">OR ADD NEW</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+          </div>
+
+          <div class="fg"><label>Name</label><input class="fi" id="nc-name"></div>
+          <div class="fg"><label>Address</label><input class="fi" id="nc-addr"></div>
+          <div class="fg-grid2" style="gap:8px">
+            <div class="fg"><label>PIN</label><input class="fi" id="nc-pin"></div>
+            <div class="fg"><label>State</label><input class="fi" id="nc-state" value="Telangana"></div>
+          </div>
+          <button class="btn btn-outline" style="width:100%;justify-content:center" onclick="saveAndFillCustomer()">Save &amp; Fill ↗</button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  document.getElementById("inv-date").value = new Date().toISOString().split('T')[0];
+}
+
+/* ─── Invoice Calculations ─── */
+function addRow() {
+  const tbody = document.getElementById("inv-tbody");
+  const sr = tbody.rows.length + 1;
+  const row = tbody.insertRow();
+
+  const inp = (type="text", val="", extra="") =>
+    `<input type="${type}" value="${val}" ${extra} style="width:100%;border:none;outline:none;text-align:center;font-size:11px;color:#000;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;">`;
+
+  row.innerHTML = `
+    <td style="color:#666;font-weight:700">${sr}</td>
+    <td>${inp("text","")}</td>
+    <td>${inp("text","540754")}</td>
+    <td>${inp("number","1","onchange='calcTotals()'")}</td>
+    <td>${inp("number","0","onchange='calcTotals()'")}</td>
+    <td>${inp("number","0","onchange='calcTotals()'")}</td>
+    <td style="font-weight:700;color:#000">0.00</td>
+    <td class="no-print"><button onclick="this.closest('tr').remove();calcTotals()" style="background:none;border:1px solid #fcc;color:#c00;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-family:inherit">✕</button></td>
+  `;
+}
+
+function calcTotals() {
+  const tbody = document.getElementById("inv-tbody");
+  if (!tbody) return;
+  let sub = 0;
+  Array.from(tbody.rows).forEach(row => {
+    const cells = row.cells;
+    const qty  = parseFloat(cells[3].querySelector('input')?.value) || 0;
+    const rate = parseFloat(cells[4].querySelector('input')?.value) || 0;
+    const disc = parseFloat(cells[5].querySelector('input')?.value) || 0;
+    const amt  = Math.max(qty * rate - disc, 0);
+    cells[6].textContent = amt.toFixed(2);
+    sub += amt;
+  });
+
+  const extra    = parseFloat(document.getElementById("t-extra")?.value)    || 0;
+  const igstPct  = parseFloat(document.getElementById("t-igst-pct")?.value) || 0;
+  const igst     = (sub + extra) * igstPct / 100;
+  const grand    = sub + extra + igst;
+
+  document.getElementById("t-sub").textContent   = "₹" + sub.toFixed(2);
+  document.getElementById("t-igst").textContent  = "₹" + igst.toFixed(2);
+  document.getElementById("t-grand").textContent = "₹" + grand.toFixed(2);
+  document.getElementById("t-words").textContent = grand.toLocaleString("en-IN") + " Rupees Only";
+}
+
+function copyBillToShip() {
+  [["rName","cName"],["rGst","cGst"],["rAddress","cAddress"],["rPin","cPin"],["rState","cState"]].forEach(([a,b]) => {
+    const ea = document.getElementById(a), eb = document.getElementById(b);
+    if (ea && eb) eb.value = ea.value;
+  });
+}
+
+/* ─── Product Search & Add ─── */
+function searchProd() {
+  const q   = document.getElementById("p-search").value.trim().toLowerCase();
+  const dd  = document.getElementById("p-results");
+  if (!q) { dd.style.display="none"; return; }
+  const res = products.filter(p => p.name.toLowerCase().includes(q)).slice(0,8);
+  if (!res.length) { dd.style.display="none"; return; }
+  dd.innerHTML = res.map(p => `
+    <div class="srch-item" onclick="pickProd('${p.name.replace(/'/g,"\\'")}',${p.rate},${p.discount||0})">
+      <span class="si-name">${p.name}</span>
+      <span class="si-meta">₹${p.rate}</span>
+    </div>`).join('');
+  dd.style.display = "block";
+}
+
+function pickProd(name, rate, disc) {
+  document.getElementById("p-name").value = name;
+  document.getElementById("p-rate").value = rate;
+  document.getElementById("p-disc").value = disc;
+  document.getElementById("p-results").style.display = "none";
+  document.getElementById("p-search").value = "";
+}
+
+async function addProductToInvoice() {
+  const name     = document.getElementById("p-name").value.trim();
+  const rate     = parseFloat(document.getElementById("p-rate").value) || 0;
+  const discPct  = parseFloat(document.getElementById("p-disc").value) || 0;
+  const qty      = parseFloat(document.getElementById("p-qty").value)  || 1;
+  if (!name) { toast("Enter product name", "error"); return; }
+
+  if (!products.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+    products.push({ name, rate, discount: discPct, created: Date.now() });
+    await save("ksProducts", products);
+  }
+
+  const tbody  = document.getElementById("inv-tbody");
+  const sr     = tbody.rows.length + 1;
+  const discAmt= (rate * qty) * discPct / 100;
+  const row    = tbody.insertRow();
+
+  const inp = (type, val, extra="") =>
+    `<input type="${type}" value="${val}" ${extra} style="width:100%;border:none;outline:none;text-align:center;font-size:11px;color:#000;background:transparent;font-family:'Plus Jakarta Sans',sans-serif;">`;
+
+  row.innerHTML = `
+    <td style="color:#666;font-weight:700">${sr}</td>
+    <td>${inp("text", name)}</td>
+    <td>${inp("text","540754")}</td>
+    <td>${inp("number", qty, "onchange='calcTotals()'")}</td>
+    <td>${inp("number", rate, "onchange='calcTotals()'")}</td>
+    <td>${inp("number", discAmt.toFixed(2), "onchange='calcTotals()'")}</td>
+    <td style="font-weight:700;color:#000">0.00</td>
+    <td class="no-print"><button onclick="this.closest('tr').remove();calcTotals()" style="background:none;border:1px solid #fcc;color:#c00;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-family:inherit">✕</button></td>
+  `;
+
+  calcTotals();
+  document.getElementById("p-name").value = "";
+  document.getElementById("p-rate").value = "";
+  document.getElementById("p-disc").value = "";
+  document.getElementById("p-qty").value  = 1;
+}
+
+/* ─── Customer Search ─── */
+function searchCust() {
+  const q   = document.getElementById("c-search").value.trim().toLowerCase();
+  const dd  = document.getElementById("c-results");
+  if (!q) { dd.style.display="none"; return; }
+  const res = customers.filter(c => c.name.toLowerCase().includes(q)).slice(0,8);
+  if (!res.length) { dd.style.display="none"; return; }
+  dd.innerHTML = res.map((c,i) => `
+    <div class="srch-item" onclick="pickCust(${customers.indexOf(c)})">
+      <span class="si-name">${c.name}</span>
+      <span class="si-meta">${c.state}</span>
+    </div>`).join('');
+  dd.style.display = "block";
+}
+
+function pickCust(idx) {
+  const c = customers[idx];
+  document.getElementById("rName").value    = c.name;
+  document.getElementById("rAddress").value = c.address;
+  document.getElementById("rPin").value     = c.pin;
+  document.getElementById("rState").value   = c.state;
+  document.getElementById("c-results").style.display = "none";
+  document.getElementById("c-search").value = "";
+}
+
+async function saveAndFillCustomer() {
+  const name  = document.getElementById("nc-name").value.trim();
+  const addr  = document.getElementById("nc-addr").value.trim();
+  const pin   = document.getElementById("nc-pin").value.trim();
+  const state = document.getElementById("nc-state").value.trim();
+  if (!name) { toast("Enter customer name", "error"); return; }
+  customers.push({ name, address:addr, pin, state, created: Date.now() });
+  await save("ksCustomers", customers);
+  document.getElementById("rName").value    = name;
+  document.getElementById("rAddress").value = addr;
+  document.getElementById("rPin").value     = pin;
+  document.getElementById("rState").value   = state;
+  toast("Customer saved & filled ✓", "success");
+  ["nc-name","nc-addr","nc-pin"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("nc-state").value = "Telangana";
+  updateCounts();
+}
+
+/* ─── Clone invoice for export ─── */
+function getExportClone() {
+  const clone = document.getElementById("inv-doc").cloneNode(true);
+  clone.querySelectorAll(".no-print, button").forEach(el => el.remove());
+  clone.querySelectorAll("input").forEach(inp => {
+    const span = document.createElement("span");
+    span.textContent = inp.value;
+    span.style.cssText = inp.style.cssText;
+    inp.parentNode.replaceChild(span, inp);
+  });
+  return clone;
+}
+
+async function autoSave() {
+  calcTotals();
+  const rName = document.getElementById("rName")?.value.trim();
+  const tbody  = document.getElementById("inv-tbody");
+  if (!rName || !tbody || tbody.rows.length === 0) return;
+  const clone    = getExportClone();
+  const fullData = clone.outerHTML;
+  if (invoices.some(i => i.fullData === fullData)) return;
+  invoices.push({
+    number: "INV-"+invoiceNo,
+    date: document.getElementById("inv-date")?.value || "",
+    customer: rName,
+    total: document.getElementById("t-grand")?.textContent?.replace("₹","") || "0",
+    fullData
+  });
+  await save("ksInvoices", invoices);
+  invoiceNo++;
+  saveInvNo(invoiceNo);
+  updateCounts();
+}
+
+async function saveInvoice() {
+  calcTotals();
+  const rName = document.getElementById("rName")?.value.trim();
+  const tbody  = document.getElementById("inv-tbody");
+  if (!rName) { toast("Enter customer name", "error"); return; }
+  if (!tbody || tbody.rows.length === 0) { toast("Add at least one product", "error"); return; }
+
+  const clone    = getExportClone();
+  const fullData = clone.outerHTML;
+  if (invoices.some(i => i.fullData === fullData)) { toast("Invoice already saved!", "warn"); return; }
+
+  const inv = {
+    number: "INV-"+invoiceNo,
+    date: document.getElementById("inv-date")?.value || "",
+    customer: rName,
+    total: document.getElementById("t-grand")?.textContent?.replace("₹","") || "0",
+    fullData
+  };
+  invoices.push(inv);
+  await save("ksInvoices", invoices);
+
+  const addr = document.getElementById("rAddress")?.value.trim();
+  if (rName && !customers.some(c => c.name===rName)) {
+    customers.push({ name:rName, address:addr||"", pin: document.getElementById("rPin")?.value||"", state: document.getElementById("rState")?.value||"", created: Date.now() });
+    await save("ksCustomers", customers);
+  }
+
+  invoiceNo++;
+  saveInvNo(invoiceNo);
+  updateCounts();
+  toast("Invoice Saved Successfully ✓", "success");
+  setTimeout(() => nav("dashboardScreen", showDashboard, document.getElementById("nav-dash")), 1400);
+}
+
+function downloadPDF() {
+  autoSave();
+  const clone = getExportClone();
+  clone.style.cssText = "width:190mm;max-width:190mm;margin:0 auto;font-family:'Plus Jakarta Sans',sans-serif;";
+  const container = document.createElement("div");
+  container.appendChild(clone);
+  document.body.appendChild(container);
+  html2pdf().set({
+    margin: 8,
+    filename: `BALAJI_${document.getElementById("rName")?.value||"Invoice"}_INV-${invoiceNo-1}.pdf`,
+    image: { type:'jpeg', quality:1 },
+    html2canvas: { scale:3, useCORS:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  }).from(clone).save().then(() => {
+    document.body.removeChild(container);
+    toast("PDF Downloaded ✓", "success");
+  });
+}
+
+function printInvoice() {
+  autoSave();
+  const clone = getExportClone();
+  const orig  = document.body.innerHTML;
+  document.body.innerHTML = "";
+  document.body.appendChild(clone);
+  window.print();
+  document.body.innerHTML = orig;
+  location.reload();
+}
+
+/* ═══════════════════════════════════════
+   INVOICE HISTORY
+═══════════════════════════════════════ */
+function showHistory() {
+  const rows = invoices.slice().reverse().map((inv, ri) => {
+    const realIdx = invoices.length - 1 - ri;
+    return `<tr>
+      <td><input type="checkbox" class="inv-sel" value="${realIdx}"></td>
+      <td><span class="dt-link" onclick="dlPDF(${realIdx})">${inv.number}</span></td>
+      <td style="font-weight:600;color:var(--navy)">${inv.customer||'—'}</td>
+      <td style="color:var(--text3)">${inv.date||'—'}</td>
+      <td class="dt-amt">${fmtRs(inv.total)}</td>
+      <td><span class="badge badge-green">✓ Saved</span></td>
+      <td>
+        <button class="btn btn-xs btn-outline" onclick="dlPDF(${realIdx})">⬇ PDF</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("invoiceScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left"><h1>Invoice History</h1><p>${invoices.length} invoices</p></div>
+      <div class="ph-right">
+        <button class="btn btn-primary" onclick="nav('invoiceScreen',createInvoice,document.getElementById('nav-create'))">➕ New Invoice</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>All Invoices</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-danger" onclick="deleteSelInvoices()">🗑 Delete Selected</button>
+        </div>
+      </div>
+      <table class="dt">
+        <thead><tr>
+          <th><input type="checkbox" onclick="toggleAll('.inv-sel',this)"></th>
+          <th>Invoice No</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          ${rows || `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No invoices yet</div></div></td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function dlPDF(index) {
+  const div = document.createElement("div");
+  div.innerHTML = invoices[index].fullData;
+  const inv = div.firstElementChild || div;
+  inv.style.cssText = "width:190mm;max-width:190mm;margin:0 auto;font-family:'Plus Jakarta Sans',sans-serif;";
+  inv.querySelectorAll(".no-print, button").forEach(el => el.remove());
+  document.body.appendChild(div);
+  html2pdf().set({
+    margin:8,
+    filename: invoices[index].number + ".pdf",
+    image:{type:'jpeg',quality:1},
+    html2canvas:{scale:3,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(inv).save().then(() => document.body.removeChild(div));
+}
+
+async function deleteSelInvoices() {
+  const checked = document.querySelectorAll(".inv-sel:checked");
+  if (!checked.length) { toast("Select invoices first","warn"); return; }
+  if (!confirm(`Delete ${checked.length} invoice(s)?`)) return;
+  [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>invoices.splice(i,1));
+  await save("ksInvoices",invoices);
+  updateCounts();
+  toast("Deleted","success");
+  showHistory();
+}
+
+/* ═══════════════════════════════════════
+   PRODUCTS (TallyPrime-style dense list)
+═══════════════════════════════════════ */
+function showProducts(sort="new") {
+  let sorted = [...products];
+  if (sort==="new")   sorted.sort((a,b)=>b.created-a.created);
+  if (sort==="old")   sorted.sort((a,b)=>a.created-b.created);
+  if (sort==="alpha") sorted.sort((a,b)=>a.name.localeCompare(b.name));
+  if (sort==="rate")  sorted.sort((a,b)=>b.rate-a.rate);
+
+  const rows = sorted.map(p => {
+    const ri = products.indexOf(p);
+    return `<tr>
+      <td><input type="checkbox" class="prod-sel" value="${ri}"></td>
+      <td style="font-weight:600;color:var(--navy)">${p.name}</td>
+      <td class="dt-mono">₹${p.rate}</td>
+      <td><span class="badge badge-orange">${p.discount||0}%</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-xs btn-ghost" onclick="editProd(${ri})">✏ Edit</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("productScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left"><h1>Products</h1><p>${products.length} in catalog</p></div>
+      <div class="ph-right">
+        <button class="btn btn-primary" onclick="addProductForm()">+ Add Product</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Product Catalog</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="fi" style="width:140px;padding:6px 10px" onchange="showProducts(this.value)">
+            <option value="new"   ${sort==='new'  ?'selected':''}>Newest First</option>
+            <option value="old"   ${sort==='old'  ?'selected':''}>Oldest First</option>
+            <option value="alpha" ${sort==='alpha'?'selected':''}>A → Z</option>
+            <option value="rate"  ${sort==='rate' ?'selected':''}>Highest Rate</option>
+          </select>
+          <button class="btn btn-sm btn-danger" onclick="deleteSelProds()">🗑 Delete</button>
+        </div>
+      </div>
+      <table class="dt">
+        <thead><tr>
+          <th><input type="checkbox" onclick="toggleAll('.prod-sel',this)"></th>
+          <th>Product Name</th><th>Rate</th><th>Discount</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          ${rows || `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📦</div><div class="empty-title">No products yet</div><div class="empty-sub">Add your product catalog</div><button class="btn btn-primary" onclick="addProductForm()">+ Add Product</button></div></td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function addProductForm() {
+  document.getElementById("productScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Add Product</h1></div></div>
+    <div class="card" style="max-width:500px">
+      <div class="card-body">
+        <div class="fg"><label>Product Name *</label><input class="fi" id="pf-name" placeholder="e.g. Silk Saree, Cotton Dupatta…"></div>
+        <div class="fg-grid2">
+          <div class="fg"><label>Rate (₹) *</label><input class="fi" type="number" id="pf-rate" placeholder="0.00"></div>
+          <div class="fg"><label>Discount %</label><input class="fi" type="number" id="pf-disc" placeholder="0" value="0"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveProd()">Save Product</button>
+          <button class="btn btn-ghost" onclick="showProducts()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function saveProd() {
+  const name = document.getElementById("pf-name").value.trim();
+  const rate = parseFloat(document.getElementById("pf-rate").value)||0;
+  const disc = parseFloat(document.getElementById("pf-disc").value)||0;
+  if (!name) { toast("Enter product name","error"); return; }
+  if (products.some(p=>p.name.toLowerCase()===name.toLowerCase())) { toast("Product already exists","warn"); return; }
+  products.push({ name, rate, discount:disc, created:Date.now() });
+  await save("ksProducts",products);
+  updateCounts();
+  toast("Product saved ✓","success");
+  showProducts();
+}
+
+function editProd(idx) {
+  const p = products[idx];
+  document.getElementById("productScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Edit Product</h1></div></div>
+    <div class="card" style="max-width:500px">
+      <div class="card-body">
+        <div class="fg"><label>Product Name</label><input class="fi" id="ep-name" value="${p.name}"></div>
+        <div class="fg-grid2">
+          <div class="fg"><label>Rate (₹)</label><input class="fi" type="number" id="ep-rate" value="${p.rate}"></div>
+          <div class="fg"><label>Discount %</label><input class="fi" type="number" id="ep-disc" value="${p.discount||0}"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="updateProd(${idx})">Update</button>
+          <button class="btn btn-ghost" onclick="showProducts()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function updateProd(idx) {
+  products[idx] = { name:document.getElementById("ep-name").value, rate:parseFloat(document.getElementById("ep-rate").value)||0, discount:parseFloat(document.getElementById("ep-disc").value)||0, created:products[idx].created };
+  await save("ksProducts",products);
+  toast("Product updated ✓","success");
+  showProducts();
+}
+
+async function deleteSelProds() {
+  const checked = document.querySelectorAll(".prod-sel:checked");
+  if (!checked.length) { toast("Select products","warn"); return; }
+  if (!confirm(`Delete ${checked.length} product(s)?`)) return;
+  [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>products.splice(i,1));
+  await save("ksProducts",products);
+  updateCounts();
+  toast("Deleted","success");
+  showProducts();
+}
+
+/* ═══════════════════════════════════════
+   CUSTOMERS
+═══════════════════════════════════════ */
+function showCustomers(sort="new") {
+  let sorted = [...customers];
+  if (sort==="new")   sorted.sort((a,b)=>b.created-a.created);
+  if (sort==="old")   sorted.sort((a,b)=>a.created-b.created);
+  if (sort==="alpha") sorted.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const rows = sorted.map(c => {
+    const ri = customers.indexOf(c);
+    return `<tr>
+      <td><input type="checkbox" class="cust-sel" value="${ri}"></td>
+      <td style="font-weight:700;color:var(--navy)">${c.name}</td>
+      <td style="color:var(--text2)">${c.address||'—'}</td>
+      <td class="dt-mono">${c.pin||'—'}</td>
+      <td><span class="badge badge-blue">${c.state||'—'}</span></td>
+      <td>
+        <button class="btn btn-xs btn-ghost" onclick="editCust(${ri})">✏ Edit</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("customerScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left"><h1>Customers</h1><p>${customers.length} registered</p></div>
+      <div class="ph-right">
+        <button class="btn btn-primary" onclick="addCustomerForm()">+ Add Customer</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>Customer List</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="fi" style="width:140px;padding:6px 10px" onchange="showCustomers(this.value)">
+            <option value="new"   ${sort==='new'  ?'selected':''}>Newest First</option>
+            <option value="old"   ${sort==='old'  ?'selected':''}>Oldest First</option>
+            <option value="alpha" ${sort==='alpha'?'selected':''}>A → Z</option>
+          </select>
+          <button class="btn btn-sm btn-danger" onclick="deleteSelCusts()">🗑 Delete</button>
+        </div>
+      </div>
+      <table class="dt">
+        <thead><tr>
+          <th><input type="checkbox" onclick="toggleAll('.cust-sel',this)"></th>
+          <th>Customer Name</th><th>Address</th><th>PIN</th><th>State</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          ${rows || `<tr><td colspan="6"><div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No customers yet</div><div class="empty-sub">Add your first customer</div><button class="btn btn-primary" onclick="addCustomerForm()">+ Add Customer</button></div></td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function addCustomerForm() {
+  const opts = indianStates.map(s=>`<option ${s==="Telangana"?"selected":""}>${s}</option>`).join('');
+  document.getElementById("customerScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Add Customer</h1></div></div>
+    <div class="card" style="max-width:540px">
+      <div class="card-body">
+        <div class="fg"><label>Full Name *</label><input class="fi" id="cf-name" placeholder="Customer or business name"></div>
+        <div class="fg"><label>Address</label><input class="fi" id="cf-addr" placeholder="Street, city…"></div>
+        <div class="fg-grid2">
+          <div class="fg"><label>PIN Code</label><input class="fi" id="cf-pin" placeholder="6-digit PIN"></div>
+          <div class="fg"><label>State</label><select class="fi" id="cf-state">${opts}</select></div>
+        </div>
+        <div class="fg"><label>GSTIN (optional)</label><input class="fi" id="cf-gst" placeholder="15-digit GSTIN"></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveCust()">Save Customer</button>
+          <button class="btn btn-ghost" onclick="showCustomers()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function saveCust() {
+  const name = document.getElementById("cf-name").value.trim();
+  if (!name) { toast("Enter customer name","error"); return; }
+  customers.push({ name, address:document.getElementById("cf-addr").value.trim(), pin:document.getElementById("cf-pin").value.trim(), state:document.getElementById("cf-state").value, gstin:document.getElementById("cf-gst").value.trim(), created:Date.now() });
+  await save("ksCustomers",customers);
+  updateCounts();
+  toast("Customer saved ✓","success");
+  showCustomers();
+}
+
+function editCust(idx) {
+  const c = customers[idx];
+  document.getElementById("customerScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Edit Customer</h1></div></div>
+    <div class="card" style="max-width:540px">
+      <div class="card-body">
+        <div class="fg"><label>Full Name</label><input class="fi" id="ec-name" value="${c.name}"></div>
+        <div class="fg"><label>Address</label><input class="fi" id="ec-addr" value="${c.address||''}"></div>
+        <div class="fg-grid2">
+          <div class="fg"><label>PIN</label><input class="fi" id="ec-pin" value="${c.pin||''}"></div>
+          <div class="fg"><label>State</label><input class="fi" id="ec-state" value="${c.state||''}"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="updateCust(${idx})">Update</button>
+          <button class="btn btn-ghost" onclick="showCustomers()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function updateCust(idx) {
+  customers[idx] = { name:document.getElementById("ec-name").value, address:document.getElementById("ec-addr").value, pin:document.getElementById("ec-pin").value, state:document.getElementById("ec-state").value, created:customers[idx].created };
+  await save("ksCustomers",customers);
+  toast("Updated ✓","success");
+  showCustomers();
+}
+
+async function deleteSelCusts() {
+  const checked = document.querySelectorAll(".cust-sel:checked");
+  if (!checked.length) { toast("Select customers","warn"); return; }
+  if (!confirm("Delete selected?")) return;
+  [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>customers.splice(i,1));
+  await save("ksCustomers",customers);
+  updateCounts();
+  toast("Deleted","success");
+  showCustomers();
+}
+
+/* ═══════════════════════════════════════
+   PURCHASES
+═══════════════════════════════════════ */
+function showPurchaseMenu() {
+  const total = purchases.reduce((s,p)=>s+parseFloat(p.amount||0),0);
+  document.getElementById("purchaseScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left"><h1>Purchases</h1><p>${purchases.length} records</p></div>
+      <div class="ph-right">
+        <button class="btn btn-outline" onclick="showPurchaseHistory()">View History</button>
+        <button class="btn btn-primary" onclick="addNewPurchase()">+ Add Purchase</button>
+      </div>
+    </div>
+
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
+        <div class="sc-icon" style="background:#eff6ff">🏷️</div>
+        <div class="sc-label">Total Purchases</div>
+        <div class="sc-value">${purchases.length}</div>
+        <div class="sc-sub">All records</div>
+      </div>
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#e83a3a,#ff6b6b)"></div>
+        <div class="sc-icon" style="background:#fff0f0">💸</div>
+        <div class="sc-label">Total Spent</div>
+        <div class="sc-value" style="font-size:18px">${fmtRs(total)}</div>
+        <div class="sc-sub">Lifetime purchases</div>
+      </div>
+      <div class="sc">
+        <div class="sc-accent" style="background:linear-gradient(90deg,#0cad6a,#00d4aa)"></div>
+        <div class="sc-icon" style="background:#e8faf3">📊</div>
+        <div class="sc-label">Last Purchase</div>
+        <div class="sc-value" style="font-size:16px">${purchases.length ? fmtRs(purchases[purchases.length-1].amount) : '—'}</div>
+        <div class="sc-sub">${purchases.length ? purchases[purchases.length-1].company : 'No records'}</div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addNewPurchase()">+ Add New Purchase</button>
+      <button class="btn btn-outline" onclick="showPurchaseHistory()">📋 View All Records</button>
+    </div>`;
+}
+
+function addNewPurchase() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById("purchaseScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Add Purchase</h1></div></div>
+    <div class="card" style="max-width:600px">
+      <div class="card-body">
+        <div class="fg-grid2">
+          <div class="fg"><label>Invoice Number</label><input class="fi" id="pu-inv" placeholder="Supplier invoice no."></div>
+          <div class="fg"><label>Company / Supplier *</label><input class="fi" id="pu-co" placeholder="Supplier name"></div>
+          <div class="fg"><label>Purchase Date</label><input class="fi" type="date" id="pu-date" value="${today}"></div>
+          <div class="fg"><label>Amount (₹) *</label><input class="fi" type="number" id="pu-amt" placeholder="0.00"></div>
+          <div class="fg"><label>Payment Date</label><input class="fi" type="date" id="pu-paid" value="${today}"></div>
+        </div>
+        <div class="btn-group" style="margin-top:8px">
+          <button class="btn btn-primary" onclick="savePurchase()">Save Purchase</button>
+          <button class="btn btn-ghost" onclick="showPurchaseMenu()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function savePurchase() {
+  const co = document.getElementById("pu-co").value.trim();
+  if (!co) { toast("Enter supplier name","error"); return; }
+  purchases.push({ invoice:document.getElementById("pu-inv").value, company:co, date:document.getElementById("pu-date").value, amount:document.getElementById("pu-amt").value, paidDate:document.getElementById("pu-paid").value });
+  await save("ksPurchases",purchases);
+  updateCounts();
+  toast("Purchase saved ✓","success");
+  showPurchaseHistory();
+}
+
+function showPurchaseHistory() {
+  const rows = purchases.map((p,i) => `
+    <tr>
+      <td><input type="checkbox" class="purch-sel" value="${i}"></td>
+      <td class="dt-mono">${p.invoice||'—'}</td>
+      <td style="font-weight:600;color:var(--navy)">${p.company}</td>
+      <td style="color:var(--text3)">${p.date}</td>
+      <td class="dt-amt">${fmtRs(p.amount)}</td>
+      <td style="color:var(--text3)">${p.paidDate}</td>
+      <td><button class="btn btn-xs btn-ghost" onclick="editPurchase(${i})">✏ Edit</button></td>
+    </tr>`).join('');
+
+  document.getElementById("purchaseScreen").innerHTML = `
+    <div class="page-header">
+      <div class="ph-left"><h1>Purchase History</h1><p>${purchases.length} records</p></div>
+      <div class="ph-right">
+        <button class="btn btn-ghost" onclick="showPurchaseMenu()">← Back</button>
+        <button class="btn btn-primary" onclick="addNewPurchase()">+ Add New</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>All Purchases</h3>
+        <button class="btn btn-sm btn-danger" onclick="deleteSelPurchases()">🗑 Delete Selected</button>
+      </div>
+      <table class="dt">
+        <thead><tr>
+          <th><input type="checkbox" onclick="toggleAll('.purch-sel',this)"></th>
+          <th>Invoice No</th><th>Supplier</th><th>Date</th><th>Amount</th><th>Paid Date</th><th>Action</th>
+        </tr></thead>
+        <tbody>
+          ${rows || `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🏷️</div><div class="empty-title">No purchases yet</div></div></td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function editPurchase(idx) {
+  const p = purchases[idx];
+  document.getElementById("purchaseScreen").innerHTML = `
+    <div class="page-header"><div class="ph-left"><h1>Edit Purchase</h1></div></div>
+    <div class="card" style="max-width:600px">
+      <div class="card-body">
+        <div class="fg-grid2">
+          <div class="fg"><label>Invoice No</label><input class="fi" id="ep-inv" value="${p.invoice||''}"></div>
+          <div class="fg"><label>Company</label><input class="fi" id="ep-co" value="${p.company}"></div>
+          <div class="fg"><label>Date</label><input class="fi" type="date" id="ep-date" value="${p.date}"></div>
+          <div class="fg"><label>Amount (₹)</label><input class="fi" type="number" id="ep-amt" value="${p.amount}"></div>
+          <div class="fg"><label>Paid Date</label><input class="fi" type="date" id="ep-paid" value="${p.paidDate}"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="updatePurchase(${idx})">Update</button>
+          <button class="btn btn-ghost" onclick="showPurchaseHistory()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function updatePurchase(idx) {
+  purchases[idx] = { invoice:document.getElementById("ep-inv").value, company:document.getElementById("ep-co").value, date:document.getElementById("ep-date").value, amount:document.getElementById("ep-amt").value, paidDate:document.getElementById("ep-paid").value };
+  await save("ksPurchases",purchases);
+  toast("Updated ✓","success");
+  showPurchaseHistory();
+}
+
+async function deleteSelPurchases() {
+  const checked = document.querySelectorAll(".purch-sel:checked");
+  if (!checked.length) { toast("Select purchases","warn"); return; }
+  if (!confirm("Delete selected?")) return;
+  [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>purchases.splice(i,1));
+  await save("ksPurchases",purchases);
+  updateCounts();
+  toast("Deleted","success");
+  showPurchaseHistory();
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+showDashboard();
+updateCounts();
+</script>
+
+<!-- ══ SETUP OVERLAY ══ -->
+<div id="setup-overlay" style="
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#0f1e3d 0%,#1e3a6e 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;
+">
+  <div style="width:100%;max-width:480px;padding:20px;">
+
+    <!-- STEP 1: Welcome / Check -->
+    <div id="s-welcome" style="text-align:center;color:white;">
+      <div style="font-size:48px;margin-bottom:16px;">🧵</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:6px;">BALAJI TEXTILES</div>
+      <div style="font-size:13px;opacity:0.6;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;">Cloud Billing System</div>
+      <div id="config-status-bar" style="margin-bottom:20px;padding:8px 16px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:0.5px;display:inline-block;"></div>
+      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:28px;border:1px solid rgba(255,255,255,0.12);">
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;">🔐 Enter Your 4-Digit PIN</div>
+        <div style="font-size:12px;opacity:0.6;margin-bottom:20px;">Your data syncs to cloud — access from any device</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
+          <input id="pin-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d2')" onkeydown="pinBack(event,'',this)">
+          <input id="pin-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d3')" onkeydown="pinBack(event,'pin-d1',this)">
+          <input id="pin-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d4')" onkeydown="pinBack(event,'pin-d2',this)">
+          <input id="pin-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)"    onkeydown="pinBack(event,'pin-d3',this)">
+        </div>
+        <div id="pin-error" style="color:#ff6b6b;font-size:12px;margin-bottom:12px;display:none">Incorrect PIN. Try again.</div>
+        <button onclick="submitPIN()" style="width:100%;padding:12px;background:linear-gradient(135deg,#e8720c,#ff8c2a);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">
+          Unlock & Open App →
+        </button>
+        <div style="margin-top:16px;font-size:11px;opacity:0.5;">First time on a new device? Just enter your PIN — data loads automatically.</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Firebase Setup -->
+    <div id="s-firebase" style="display:none;color:white;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:32px;margin-bottom:8px;">☁️</div>
+        <div style="font-size:18px;font-weight:800;">One-Time Cloud Setup</div>
+        <div style="font-size:12px;opacity:0.6;margin-top:4px;">Takes 3 minutes. Free forever. Works on all devices.</div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:12px;font-weight:700;margin-bottom:14px;opacity:0.8;">📋 STEP-BY-STEP SETUP:</div>
+        <div style="font-size:12px;opacity:0.75;line-height:2.2;">
+          <b style="color:#fbbf24">1.</b> Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa;font-weight:700;">console.firebase.google.com</a><br>
+          <b style="color:#fbbf24">2.</b> Click <b style="color:white">"Add project"</b> → Name it <b style="color:white">"BalajiBilling"</b> → Create<br>
+          <b style="color:#fbbf24">3.</b> In left menu click <b style="color:white">"Build" → "Realtime Database"</b><br>
+          <b style="color:#fbbf24">4.</b> Click <b style="color:white">"Create Database"</b> → Choose any region → <b style="color:white">"Start in test mode"</b> → Enable<br>
+          <b style="color:#fbbf24">5.</b> Click ⚙️ Settings → <b style="color:white">"Project settings"</b> → Scroll down → Click <b style="color:white">"&lt;/&gt;"</b> (Web icon)<br>
+          <b style="color:#fbbf24">6.</b> Register app → Copy the <b style="color:#fbbf24">firebaseConfig</b> object → Paste below
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Paste your firebaseConfig here:</div>
+        <textarea id="fb-config-input" placeholder='Paste the full firebaseConfig object here...
+Example:
+{
+  apiKey: "AIza...",
+  authDomain: "your-app.firebaseapp.com",
+  databaseURL: "https://your-app-default-rtdb.firebaseio.com",
+  projectId: "your-app",
+  ...
+}' style="
+  width:100%;height:140px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:10px;
+  color:white;padding:12px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;resize:vertical;
+  outline:none;
+"></textarea>
+      </div>
+
+      <div id="fb-error" style="color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none;padding:10px;background:rgba(255,0,0,0.1);border-radius:8px;"></div>
+
+      <button onclick="connectFirebase()" style="width:100%;padding:12px;background:linear-gradient(135deg,#e8720c,#ff8c2a);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;margin-bottom:10px;">
+        ☁️ Connect to Cloud →
+      </button>
+
+      <div style="text-align:center;font-size:11px;opacity:0.4;">Your data will be encrypted and private in your own Firebase project</div>
+    </div>
+
+    <!-- STEP 3: Create PIN -->
+    <div id="s-create-pin" style="display:none;color:white;text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🔐</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Create Your Secret PIN</div>
+      <div style="font-size:12px;opacity:0.6;margin-bottom:24px;">This PIN protects your business data on all devices</div>
+
+      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.12);margin-bottom:16px;">
+        <div style="font-size:12px;opacity:0.7;margin-bottom:12px;">Choose a 4-digit PIN</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
+          <input id="np-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d2')">
+          <input id="np-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d3')">
+          <input id="np-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d4')">
+          <input id="np-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)">
+        </div>
+        <div style="font-size:12px;opacity:0.7;margin-bottom:12px;">Confirm PIN</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
+          <input id="cp-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d2')">
+          <input id="cp-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d3')">
+          <input id="cp-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d4')">
+          <input id="cp-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)">
+        </div>
+        <div id="cp-error" style="color:#ff6b6b;font-size:12px;margin-bottom:12px;display:none;">PINs don't match. Try again.</div>
+        <button onclick="createPIN()" style="width:100%;padding:12px;background:linear-gradient(135deg,#0cad6a,#00d4aa);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">
+          Save PIN & Open App ✓
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.pin-box {
+  width:52px;height:60px;
+  background:rgba(255,255,255,0.1);
+  border:2px solid rgba(255,255,255,0.2);
+  border-radius:12px;
+  color:white;
+  font-size:24px;font-weight:800;
+  text-align:center;outline:none;
+  font-family:'JetBrains Mono',monospace;
+  transition:all 0.15s;
+}
+.pin-box:focus { border-color:#e8720c; background:rgba(232,114,12,0.15); }
+</style>
+</body>
+</html>
