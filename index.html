@@ -4,34 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BALAJI TEXTILES — Professional Billing</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js">
-/* ── User menu ── */
-function toggleUserMenu() {
-  const m = document.getElementById('user-menu');
-  m.style.display = m.style.display === 'none' ? 'block' : 'none';
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.tb-avatar') && !e.target.closest('#user-menu')) {
-    const m = document.getElementById('user-menu');
-    if (m) m.style.display = 'none';
-  }
-});
-function lockApp() {
-  document.getElementById('setup-overlay').style.display = 'flex';
-  showStep('s-welcome');
-  clearPins('pin-');
-  setTimeout(() => document.getElementById('pin-d1')?.focus(), 100);
-  document.getElementById('user-menu').style.display = 'none';
-}
-function resetSetup() {
-  if (!confirm('This will clear your local PIN cache. Your cloud data stays safe. Continue?')) return;
-  localStorage.removeItem('fbConfig');
-  localStorage.removeItem('pinHash');
-  db = null; isOnline = false;
-  lockApp();
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
@@ -805,10 +778,6 @@ input, select, textarea { font-family: inherit; }
 .mc-bar:hover::after { content: attr(data-val); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; color: var(--navy); white-space: nowrap; }
 
 </style>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -831,17 +800,8 @@ input, select, textarea { font-family: inherit; }
 
   <div class="tb-right">
     <div class="tb-date" id="liveDate"></div>
-    <div id="sync-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.6)"><div id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:#6b7280"></div><span id="sync-label">Offline</span></div><div class="tb-gst-badge">✓ GST Active</div>
-    <div style="position:relative">
-  <div class="tb-avatar" onclick="toggleUserMenu()" style="cursor:pointer" title="Account">B</div>
-  <div id="user-menu" style="display:none;position:absolute;right:0;top:44px;background:white;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.2);min-width:180px;z-index:9999;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
-    <div style="padding:14px 16px;border-bottom:1px solid #eee;font-size:12px;font-weight:700;color:#0f1e3d">BALAJI TEXTILES</div>
-    <div style="padding:4px">
-      <button onclick="lockApp()" style="width:100%;padding:10px 12px;background:none;border:none;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#3d5080;font-family:inherit;">🔒 Lock App</button>
-      <button onclick="resetSetup()" style="width:100%;padding:10px 12px;background:none;border:none;text-align:left;font-size:13px;cursor:pointer;border-radius:8px;color:#e83a3a;font-family:inherit;">⚙️ Reset Cloud Setup</button>
-    </div>
-  </div>
-</div>
+    <div class="tb-gst-badge">✓ GST Active</div>
+    <div class="tb-avatar">B</div>
   </div>
 </div>
 
@@ -914,434 +874,19 @@ input, select, textarea { font-family: inherit; }
 </div>
 
 <script>
-/* ╔══════════════════════════════════════════════════════════╗
-   ║   STEP 1 — PASTE YOUR FIREBASE CONFIG HERE               ║
-   ║   Do this once, then redeploy. Works on ALL devices.     ║
-   ╚══════════════════════════════════════════════════════════╝
-
-   How to get this config:
-   1. Go to https://console.firebase.google.com
-   2. Open your project → ⚙️ Settings → Project Settings
-   3. Scroll down → Click </> (Web) → Copy the firebaseConfig object
-   4. Paste it below replacing the null value
-   5. Run: firebase deploy
-*/
-
-const FIREBASE_CONFIG = null;  // ← PASTE YOUR CONFIG HERE
-/* Example — replace the null above with your actual config:
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdefabcdef"
-};
-*/
-
 /* ═══════════════════════════════════════
-   FIREBASE CLOUD DATA LAYER
-   ─ Config hardcoded above → works on any device
-   ─ Falls back to localStorage if offline
+   DATA STORE
 ═══════════════════════════════════════ */
+let invoices = [];
 
-let db = null;         // Firebase database instance
-let isOnline = false;  // Cloud connection status
 
-// In-memory data (loaded from cloud or localStorage)
-let invoices  = [];
-let products  = [];
-let customers = [];
-let purchases = [];
-let invoiceNo = 2077;
+let products  = JSON.parse(localStorage.getItem("ksProducts"))  || [];
+let customers = JSON.parse(localStorage.getItem("ksCustomers")) || [];
+let purchases = JSON.parse(localStorage.getItem("ksPurchases")) || [];
+let invoiceNo = parseInt(localStorage.getItem("ksInvoiceNo"))   || 2077;
 
+const save = (key, val) => localStorage.setItem(key, JSON.stringify(val));
 const indianStates = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"].sort();
-
-/* ── Firebase init ── */
-function initFirebase(config) {
-  try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(config);
-    }
-    db = firebase.database();
-    return true;
-  } catch(e) {
-    console.error("Firebase init error:", e);
-    return false;
-  }
-}
-
-/* ── Save ONE collection to Firebase + localStorage ── */
-async function save(key, val) {
-  // Always save to localStorage first (instant, offline)
-  localStorage.setItem(key, JSON.stringify(val));
-
-  // Then sync to Firebase cloud
-  if (db && isOnline) {
-    try {
-      await db.ref('balaji/' + key).set(val);
-    } catch(e) {
-      setSyncStatus('error');
-      console.warn("Cloud sync failed:", e);
-    }
-  }
-}
-
-/* ── Save invoiceNo separately ── */
-async function saveInvNo(n) {
-  invoiceNo = n;
-  localStorage.setItem("ksInvoiceNo", n);
-  if (db && isOnline) {
-    try {
-      await db.ref('balaji/invoiceNo').set(n);
-    } catch(e) {}
-  }
-}
-
-/* ── Load ALL data from Firebase (or localStorage fallback) ── */
-async function loadAllData() {
-  if (db && isOnline) {
-    try {
-      setSyncStatus('syncing');
-      const snap = await db.ref('balaji').get();
-      if (snap.exists()) {
-        const d = snap.val();
-        invoices  = d.ksInvoices  || [];
-        products  = d.ksProducts  || [];
-        customers = d.ksCustomers || [];
-        purchases = d.ksPurchases || [];
-        invoiceNo = d.invoiceNo   || 2077;
-        // Also cache locally
-        localStorage.setItem("ksInvoices",  JSON.stringify(invoices));
-        localStorage.setItem("ksProducts",  JSON.stringify(products));
-        localStorage.setItem("ksCustomers", JSON.stringify(customers));
-        localStorage.setItem("ksPurchases", JSON.stringify(purchases));
-        saveInvNo(invoiceNo);
-      } else {
-        // First time on this device — push existing local data to cloud
-        await pushLocalToCloud();
-      }
-      setSyncStatus('online');
-
-      // ✅ START REAL-TIME LISTENER
-      // When ANY friend saves/edits anything, ALL screens update automatically within 2 seconds
-      setupRealTimeSync();
-
-    } catch(e) {
-      console.warn("Cloud load failed, using local:", e);
-      loadFromLocal();
-      setSyncStatus('error');
-    }
-  } else {
-    loadFromLocal();
-  }
-}
-
-/* ══════════════════════════════════════════
-   REAL-TIME SYNC — THE KEY FEATURE
-   ─ Firebase watches for ANY change in the cloud
-   ─ When your friend saves a customer / invoice / product
-   ─ YOUR screen updates automatically within 1-2 seconds
-   ─ No refresh needed. Works for all 5 users simultaneously.
-══════════════════════════════════════════ */
-let _rtListenerActive = false;
-
-function setupRealTimeSync() {
-  if (_rtListenerActive) return; // attach only once
-  _rtListenerActive = true;
-
-  db.ref('balaji').on('value', (snap) => {
-    if (!snap.exists()) return;
-    const d = snap.val();
-
-    const newInvoices  = d.ksInvoices  || [];
-    const newProducts  = d.ksProducts  || [];
-    const newCustomers = d.ksCustomers || [];
-    const newPurchases = d.ksPurchases || [];
-    const newInvNo     = d.invoiceNo   || invoiceNo;
-
-    // Only update if something actually changed
-    const changed =
-      JSON.stringify(newInvoices)  !== JSON.stringify(invoices)  ||
-      JSON.stringify(newProducts)  !== JSON.stringify(products)  ||
-      JSON.stringify(newCustomers) !== JSON.stringify(customers) ||
-      JSON.stringify(newPurchases) !== JSON.stringify(purchases) ||
-      newInvNo !== invoiceNo;
-
-    if (changed) {
-      invoices  = newInvoices;
-      products  = newProducts;
-      customers = newCustomers;
-      purchases = newPurchases;
-      invoiceNo = newInvNo;
-
-      // Update local cache
-      localStorage.setItem("ksInvoices",  JSON.stringify(invoices));
-      localStorage.setItem("ksProducts",  JSON.stringify(products));
-      localStorage.setItem("ksCustomers", JSON.stringify(customers));
-      localStorage.setItem("ksPurchases", JSON.stringify(purchases));
-
-      // Refresh whichever screen is currently open
-      updateCounts();
-      const active = document.querySelector('.screen.active');
-      if (active) {
-        const id = active.id;
-        if (id === 'dashboardScreen')  showDashboard();
-        if (id === 'customerScreen')   showCustomers();
-        if (id === 'productScreen')    showProducts();
-        if (id === 'invoiceScreen')    showHistory();
-        if (id === 'purchaseScreen')   showPurchaseHistory();
-      }
-
-      setSyncStatus('online');
-      toast('🔄 Updated by another user', 'info');
-    }
-  }, (error) => {
-    console.warn('Real-time sync error:', error);
-    setSyncStatus('error');
-  });
-}
-
-function loadFromLocal() {
-  invoices  = JSON.parse(localStorage.getItem("ksInvoices"))  || [];
-  products  = JSON.parse(localStorage.getItem("ksProducts"))  || [];
-  customers = JSON.parse(localStorage.getItem("ksCustomers")) || [];
-  purchases = JSON.parse(localStorage.getItem("ksPurchases")) || [];
-  invoiceNo = parseInt(localStorage.getItem("ksInvoiceNo"))   || 2077;
-}
-
-async function pushLocalToCloud() {
-  loadFromLocal();
-  if (db) {
-    try {
-      await db.ref('balaji').set({
-        ksInvoices:  invoices,
-        ksProducts:  products,
-        ksCustomers: customers,
-        ksPurchases: purchases,
-        invoiceNo:   invoiceNo
-      });
-    } catch(e) {}
-  }
-}
-
-/* ── Sync status UI ── */
-function setSyncStatus(status) {
-  const dot   = document.getElementById('sync-dot');
-  const label = document.getElementById('sync-label');
-  if (!dot || !label) return;
-  const map = {
-    online:  { color:'#4ade80', text:'Synced ✓' },
-    syncing: { color:'#fbbf24', text:'Syncing…' },
-    error:   { color:'#f87171', text:'Offline'  },
-  };
-  const s = map[status] || map.error;
-  dot.style.background = s.color;
-  label.textContent    = s.text;
-  label.style.color    = s.color;
-}
-
-/* ══════════════════════════════════════════
-   PIN & SETUP SYSTEM
-══════════════════════════════════════════ */
-function pinMove(el, nextId) {
-  if (el.value && nextId) document.getElementById(nextId)?.focus();
-}
-
-function pinBack(e, prevId, el) {
-  if (e.key === 'Backspace' && !el.value && prevId) {
-    document.getElementById(prevId)?.focus();
-  }
-}
-
-function getPin(prefix) {
-  return ['d1','d2','d3','d4'].map(d => document.getElementById(prefix+d)?.value || '').join('');
-}
-
-/* Simple hash for PIN storage */
-async function hashPin(pin) {
-  const msgBuffer = new TextEncoder().encode(pin + 'balaji_salt_2024');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray  = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('').slice(0,16);
-}
-
-async function submitPIN() {
-  const pin = getPin('pin-');
-  if (pin.length < 4) { showPinError('pin-error', 'Enter all 4 digits'); return; }
-
-  // Use hardcoded config from top of file
-  const configToUse = FIREBASE_CONFIG || (() => {
-    try { return JSON.parse(localStorage.getItem('fbConfig')); } catch(e) { return null; }
-  })();
-
-  if (!configToUse) {
-    showStep('s-firebase');
-    return;
-  }
-
-  if (!db) {
-    const ok = initFirebase(configToUse);
-    if (!ok) {
-      showPinError('pin-error', 'Firebase failed to start. Check config.');
-      return;
-    }
-    isOnline = true;
-  }
-
-  const inputHash = await hashPin(pin);
-
-  let cloudHash = null;
-  try {
-    const snap = await db.ref('balaji/pinHash').get();
-    if (snap.exists()) cloudHash = snap.val();
-  } catch(e) {
-    cloudHash = localStorage.getItem('pinHash') || null;
-  }
-
-  if (!cloudHash) {
-    showStep('s-create-pin');
-    return;
-  }
-
-  if (cloudHash !== inputHash) {
-    showPinError('pin-error', 'Incorrect PIN. Try again.');
-    clearPins('pin-');
-    return;
-  }
-
-  localStorage.setItem('pinHash', cloudHash);
-  await loadAndOpenApp();
-}
-
-async function connectFirebase() {
-  const raw = document.getElementById('fb-config-input').value.trim();
-  const errEl = document.getElementById('fb-error');
-  errEl.style.display = 'none';
-
-  if (!raw) { showFbError('Paste your Firebase config first'); return; }
-
-  // Clean the config text (remove "const firebaseConfig = " etc)
-  let cleaned = raw;
-  cleaned = cleaned.replace(/const\s+firebaseConfig\s*=\s*/g, '');
-  cleaned = cleaned.replace(/var\s+firebaseConfig\s*=\s*/g, '');
-  cleaned = cleaned.replace(/let\s+firebaseConfig\s*=\s*/g, '');
-  cleaned = cleaned.replace(/;\s*$/g, '');
-  // Convert JS object to JSON
-  cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
-
-  let config;
-  try {
-    config = JSON.parse(cleaned);
-  } catch(e) {
-    showFbError('Invalid config format. Make sure you copied the full firebaseConfig object (with curly braces { }).');
-    return;
-  }
-
-  if (!config.apiKey || !config.databaseURL) {
-    showFbError('Missing required fields. Make sure your project has Realtime Database enabled and databaseURL is present.');
-    return;
-  }
-
-  // Test connection
-  try {
-    if (!initFirebase(config)) throw new Error("Init failed");
-    const testRef = db.ref('.info/connected');
-    const connected = await new Promise((resolve) => {
-      const unsub = testRef.on('value', snap => {
-        testRef.off('value', unsub);
-        resolve(snap.val());
-      });
-      setTimeout(() => { testRef.off('value', unsub); resolve(false); }, 8000);
-    });
-
-    if (!connected) throw new Error("Could not connect");
-
-    isOnline = true;
-    localStorage.setItem('fbConfig', JSON.stringify(config));
-    showStep('s-create-pin');
-
-  } catch(e) {
-    showFbError('Connection failed. Check: (1) databaseURL is correct, (2) Database is in Test Mode, (3) Internet is working. Error: ' + e.message);
-  }
-}
-
-async function createPIN() {
-  const pin    = getPin('np-');
-  const pinCon = getPin('cp-');
-  const errEl  = document.getElementById('cp-error');
-  errEl.style.display = 'none';
-
-  if (pin.length < 4)    { errEl.textContent='Enter 4 digits for PIN';   errEl.style.display='block'; return; }
-  if (pin !== pinCon)    { errEl.textContent="PINs don't match";          errEl.style.display='block'; return; }
-
-  const hashed = await hashPin(pin);
-  localStorage.setItem('pinHash', hashed);
-  // Save to cloud
-  if (db) await db.ref('balaji/pinHash').set(hashed);
-
-  await loadAndOpenApp();
-}
-
-async function loadAndOpenApp() {
-  await loadAllData();
-  document.getElementById('setup-overlay').style.display = 'none';
-  updateCounts();
-  showDashboard();
-  document.querySelector('.nav-item').classList.add('active');
-}
-
-function showStep(id) {
-  ['s-welcome','s-firebase','s-create-pin'].forEach(s => {
-    const el = document.getElementById(s);
-    if (el) el.style.display = s === id ? 'block' : 'none';
-  });
-}
-
-function showPinError(id, msg) {
-  const el = document.getElementById(id);
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-function showFbError(msg) {
-  const el = document.getElementById('fb-error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-function clearPins(prefix) {
-  ['d1','d2','d3','d4'].forEach(d => {
-    const el = document.getElementById(prefix+d);
-    if (el) el.value = '';
-  });
-  document.getElementById(prefix+'d1')?.focus();
-}
-
-/* ── AUTO STARTUP ── */
-window.addEventListener('DOMContentLoaded', () => {
-  // If config is hardcoded at top of file, auto-init Firebase silently
-  if (FIREBASE_CONFIG) {
-    initFirebase(FIREBASE_CONFIG);
-    isOnline = true;
-  }
-  showStep('s-welcome');
-
-  // Show config status
-  const bar = document.getElementById('config-status-bar');
-  if (bar) {
-    if (FIREBASE_CONFIG) {
-      bar.textContent = '☁️ Cloud Ready — Any Device Access Enabled';
-      bar.style.cssText += 'background:rgba(12,173,106,0.2);color:#4ade80;border:1px solid rgba(12,173,106,0.3)';
-    } else {
-      bar.textContent = '⚠️ Config Not Set — Open on Your Computer to Setup';
-      bar.style.cssText += 'background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)';
-    }
-  }
-
-  setTimeout(() => document.getElementById('pin-d1')?.focus(), 100);
-});
-
-// indianStates defined above
 
 /* ═══════════════════════════════════════
    UTILITIES
@@ -1633,7 +1178,7 @@ function createInvoice() {
           <!-- Header -->
           <div class="inv-head">
             <div class="inv-head-logo">
-              <img src="logo.png" onerror="this.style.display='none'" style="width:80px">
+              <img src="logo.jpeg" onerror="this.style.display='none'" style="width:80px">
             </div>
             <div class="inv-head-center">
               <div class="namah">॥ Shree Ganeshaya Namah ॥</div>
@@ -1823,6 +1368,8 @@ function createInvoice() {
   `;
 
   document.getElementById("inv-date").value = new Date().toISOString().split('T')[0];
+
+currentInvoiceSaved = false;
 }
 
 /* ─── Invoice Calculations ─── */
@@ -1901,7 +1448,7 @@ function pickProd(name, rate, disc) {
   document.getElementById("p-search").value = "";
 }
 
-async function addProductToInvoice() {
+function addProductToInvoice() {
   const name     = document.getElementById("p-name").value.trim();
   const rate     = parseFloat(document.getElementById("p-rate").value) || 0;
   const discPct  = parseFloat(document.getElementById("p-disc").value) || 0;
@@ -1910,7 +1457,7 @@ async function addProductToInvoice() {
 
   if (!products.some(p => p.name.toLowerCase() === name.toLowerCase())) {
     products.push({ name, rate, discount: discPct, created: Date.now() });
-    await save("ksProducts", products);
+    save("ksProducts", products);
   }
 
   const tbody  = document.getElementById("inv-tbody");
@@ -1964,14 +1511,14 @@ function pickCust(idx) {
   document.getElementById("c-search").value = "";
 }
 
-async function saveAndFillCustomer() {
+function saveAndFillCustomer() {
   const name  = document.getElementById("nc-name").value.trim();
   const addr  = document.getElementById("nc-addr").value.trim();
   const pin   = document.getElementById("nc-pin").value.trim();
   const state = document.getElementById("nc-state").value.trim();
   if (!name) { toast("Enter customer name", "error"); return; }
   customers.push({ name, address:addr, pin, state, created: Date.now() });
-  await save("ksCustomers", customers);
+  save("ksCustomers", customers);
   document.getElementById("rName").value    = name;
   document.getElementById("rAddress").value = addr;
   document.getElementById("rPin").value     = pin;
@@ -1995,63 +1542,55 @@ function getExportClone() {
   return clone;
 }
 
-async function autoSave() {
+
+
+
+async function saveInvoiceToCloud() {
+if (currentInvoiceSaved) return true;
+
   calcTotals();
+
   const rName = document.getElementById("rName")?.value.trim();
-  const tbody  = document.getElementById("inv-tbody");
-  if (!rName || !tbody || tbody.rows.length === 0) return;
-  const clone    = getExportClone();
-  const fullData = clone.outerHTML;
-  if (invoices.some(i => i.fullData === fullData)) return;
-  invoices.push({
-    number: "INV-"+invoiceNo,
-    date: document.getElementById("inv-date")?.value || "",
+  const invDate = document.getElementById("inv-date")?.value || "";
+
+  if (!rName) {
+    toast("Enter customer name", "error");
+    return false;
+  }
+
+  const totalAmount = document.getElementById("t-grand")?.textContent.replace("₹","");
+
+const invoiceNumber = "INV-" + invoiceNo;
+
+  const invoiceData = {
+    number: invoiceNumber,
     customer: rName,
-    total: document.getElementById("t-grand")?.textContent?.replace("₹","") || "0",
-    fullData
-  });
-  await save("ksInvoices", invoices);
-  invoiceNo++;
-  saveInvNo(invoiceNo);
-  updateCounts();
+    date: invDate,
+    total: totalAmount,
+    createdAt: Date.now()
+  };
+
+  await addDoc(collection(db, "invoices"), invoiceData);
+invoiceNo++;
+localStorage.setItem("ksInvoiceNo", invoiceNo);
+
+  toast("Invoice Saved to Cloud ✓", "success");
+currentInvoiceSaved = true;
+  return true;
 }
 
 async function saveInvoice() {
-  calcTotals();
-  const rName = document.getElementById("rName")?.value.trim();
-  const tbody  = document.getElementById("inv-tbody");
-  if (!rName) { toast("Enter customer name", "error"); return; }
-  if (!tbody || tbody.rows.length === 0) { toast("Add at least one product", "error"); return; }
-
-  const clone    = getExportClone();
-  const fullData = clone.outerHTML;
-  if (invoices.some(i => i.fullData === fullData)) { toast("Invoice already saved!", "warn"); return; }
-
-  const inv = {
-    number: "INV-"+invoiceNo,
-    date: document.getElementById("inv-date")?.value || "",
-    customer: rName,
-    total: document.getElementById("t-grand")?.textContent?.replace("₹","") || "0",
-    fullData
-  };
-  invoices.push(inv);
-  await save("ksInvoices", invoices);
-
-  const addr = document.getElementById("rAddress")?.value.trim();
-  if (rName && !customers.some(c => c.name===rName)) {
-    customers.push({ name:rName, address:addr||"", pin: document.getElementById("rPin")?.value||"", state: document.getElementById("rState")?.value||"", created: Date.now() });
-    await save("ksCustomers", customers);
-  }
-
-  invoiceNo++;
-  saveInvNo(invoiceNo);
-  updateCounts();
-  toast("Invoice Saved Successfully ✓", "success");
-  setTimeout(() => nav("dashboardScreen", showDashboard, document.getElementById("nav-dash")), 1400);
+  await saveInvoiceToCloud();
 }
 
-function downloadPDF() {
-  autoSave();
+
+
+
+async function downloadPDF() {
+
+const saved = await saveInvoiceToCloud();
+if (!saved) return;
+  
   const clone = getExportClone();
   clone.style.cssText = "width:190mm;max-width:190mm;margin:0 auto;font-family:'Plus Jakarta Sans',sans-serif;";
   const container = document.createElement("div");
@@ -2069,8 +1608,11 @@ function downloadPDF() {
   });
 }
 
-function printInvoice() {
-  autoSave();
+async function printInvoice() {
+const saved = await saveInvoiceToCloud();
+if (!saved) return;
+
+ 
   const clone = getExportClone();
   const orig  = document.body.innerHTML;
   document.body.innerHTML = "";
@@ -2127,30 +1669,29 @@ function showHistory() {
 }
 
 function dlPDF(index) {
-  const div = document.createElement("div");
-  div.innerHTML = invoices[index].fullData;
-  const inv = div.firstElementChild || div;
-  inv.style.cssText = "width:190mm;max-width:190mm;margin:0 auto;font-family:'Plus Jakarta Sans',sans-serif;";
-  inv.querySelectorAll(".no-print, button").forEach(el => el.remove());
-  document.body.appendChild(div);
-  html2pdf().set({
-    margin:8,
-    filename: invoices[index].number + ".pdf",
-    image:{type:'jpeg',quality:1},
-    html2canvas:{scale:3,useCORS:true},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-  }).from(inv).save().then(() => document.body.removeChild(div));
+  alert("PDF download from history not available in cloud mode.");
 }
 
+
+
 async function deleteSelInvoices() {
+
   const checked = document.querySelectorAll(".inv-sel:checked");
-  if (!checked.length) { toast("Select invoices first","warn"); return; }
+
+  if (!checked.length) {
+    toast("Select invoices first","warn");
+    return;
+  }
+
   if (!confirm(`Delete ${checked.length} invoice(s)?`)) return;
-  [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>invoices.splice(i,1));
-  await save("ksInvoices",invoices);
-  updateCounts();
-  toast("Deleted","success");
-  showHistory();
+
+  for (let cb of checked) {
+    const index = parseInt(cb.value);
+    const inv = invoices[index];
+    await deleteDoc(doc(db, "invoices", inv.id));
+  }
+
+  toast("Deleted from Cloud ✓","success");
 }
 
 /* ═══════════════════════════════════════
@@ -2229,14 +1770,14 @@ function addProductForm() {
     </div>`;
 }
 
-async function saveProd() {
+function saveProd() {
   const name = document.getElementById("pf-name").value.trim();
   const rate = parseFloat(document.getElementById("pf-rate").value)||0;
   const disc = parseFloat(document.getElementById("pf-disc").value)||0;
   if (!name) { toast("Enter product name","error"); return; }
   if (products.some(p=>p.name.toLowerCase()===name.toLowerCase())) { toast("Product already exists","warn"); return; }
   products.push({ name, rate, discount:disc, created:Date.now() });
-  await save("ksProducts",products);
+  save("ksProducts",products);
   updateCounts();
   toast("Product saved ✓","success");
   showProducts();
@@ -2261,19 +1802,19 @@ function editProd(idx) {
     </div>`;
 }
 
-async function updateProd(idx) {
+function updateProd(idx) {
   products[idx] = { name:document.getElementById("ep-name").value, rate:parseFloat(document.getElementById("ep-rate").value)||0, discount:parseFloat(document.getElementById("ep-disc").value)||0, created:products[idx].created };
-  await save("ksProducts",products);
+  save("ksProducts",products);
   toast("Product updated ✓","success");
   showProducts();
 }
 
-async function deleteSelProds() {
+function deleteSelProds() {
   const checked = document.querySelectorAll(".prod-sel:checked");
   if (!checked.length) { toast("Select products","warn"); return; }
   if (!confirm(`Delete ${checked.length} product(s)?`)) return;
   [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>products.splice(i,1));
-  await save("ksProducts",products);
+  save("ksProducts",products);
   updateCounts();
   toast("Deleted","success");
   showProducts();
@@ -2354,11 +1895,11 @@ function addCustomerForm() {
     </div>`;
 }
 
-async function saveCust() {
+function saveCust() {
   const name = document.getElementById("cf-name").value.trim();
   if (!name) { toast("Enter customer name","error"); return; }
   customers.push({ name, address:document.getElementById("cf-addr").value.trim(), pin:document.getElementById("cf-pin").value.trim(), state:document.getElementById("cf-state").value, gstin:document.getElementById("cf-gst").value.trim(), created:Date.now() });
-  await save("ksCustomers",customers);
+  save("ksCustomers",customers);
   updateCounts();
   toast("Customer saved ✓","success");
   showCustomers();
@@ -2384,19 +1925,19 @@ function editCust(idx) {
     </div>`;
 }
 
-async function updateCust(idx) {
+function updateCust(idx) {
   customers[idx] = { name:document.getElementById("ec-name").value, address:document.getElementById("ec-addr").value, pin:document.getElementById("ec-pin").value, state:document.getElementById("ec-state").value, created:customers[idx].created };
-  await save("ksCustomers",customers);
+  save("ksCustomers",customers);
   toast("Updated ✓","success");
   showCustomers();
 }
 
-async function deleteSelCusts() {
+function deleteSelCusts() {
   const checked = document.querySelectorAll(".cust-sel:checked");
   if (!checked.length) { toast("Select customers","warn"); return; }
   if (!confirm("Delete selected?")) return;
   [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>customers.splice(i,1));
-  await save("ksCustomers",customers);
+  save("ksCustomers",customers);
   updateCounts();
   toast("Deleted","success");
   showCustomers();
@@ -2467,11 +2008,11 @@ function addNewPurchase() {
     </div>`;
 }
 
-async function savePurchase() {
+function savePurchase() {
   const co = document.getElementById("pu-co").value.trim();
   if (!co) { toast("Enter supplier name","error"); return; }
   purchases.push({ invoice:document.getElementById("pu-inv").value, company:co, date:document.getElementById("pu-date").value, amount:document.getElementById("pu-amt").value, paidDate:document.getElementById("pu-paid").value });
-  await save("ksPurchases",purchases);
+  save("ksPurchases",purchases);
   updateCounts();
   toast("Purchase saved ✓","success");
   showPurchaseHistory();
@@ -2535,23 +2076,26 @@ function editPurchase(idx) {
     </div>`;
 }
 
-async function updatePurchase(idx) {
+function updatePurchase(idx) {
   purchases[idx] = { invoice:document.getElementById("ep-inv").value, company:document.getElementById("ep-co").value, date:document.getElementById("ep-date").value, amount:document.getElementById("ep-amt").value, paidDate:document.getElementById("ep-paid").value };
-  await save("ksPurchases",purchases);
+  save("ksPurchases",purchases);
   toast("Updated ✓","success");
   showPurchaseHistory();
 }
 
-async function deleteSelPurchases() {
+function deleteSelPurchases() {
   const checked = document.querySelectorAll(".purch-sel:checked");
   if (!checked.length) { toast("Select purchases","warn"); return; }
   if (!confirm("Delete selected?")) return;
   [...checked].map(c=>parseInt(c.value)).sort((a,b)=>b-a).forEach(i=>purchases.splice(i,1));
-  await save("ksPurchases",purchases);
+  save("ksPurchases",purchases);
   updateCounts();
   toast("Deleted","success");
   showPurchaseHistory();
 }
+
+
+
 
 /* ═══════════════════════════════════════
    INIT
@@ -2560,133 +2104,69 @@ showDashboard();
 updateCounts();
 </script>
 
-<!-- ══ SETUP OVERLAY ══ -->
-<div id="setup-overlay" style="
-  position:fixed;inset:0;z-index:9999;
-  background:linear-gradient(135deg,#0f1e3d 0%,#1e3a6e 100%);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Plus Jakarta Sans',sans-serif;
-">
-  <div style="width:100%;max-width:480px;padding:20px;">
 
-    <!-- STEP 1: Welcome / Check -->
-    <div id="s-welcome" style="text-align:center;color:white;">
-      <div style="font-size:48px;margin-bottom:16px;">🧵</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:6px;">BALAJI TEXTILES</div>
-      <div style="font-size:13px;opacity:0.6;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;">Cloud Billing System</div>
-      <div id="config-status-bar" style="margin-bottom:20px;padding:8px 16px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:0.5px;display:inline-block;"></div>
-      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:28px;border:1px solid rgba(255,255,255,0.12);">
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;">🔐 Enter Your 4-Digit PIN</div>
-        <div style="font-size:12px;opacity:0.6;margin-bottom:20px;">Your data syncs to cloud — access from any device</div>
-        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
-          <input id="pin-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d2')" onkeydown="pinBack(event,'',this)">
-          <input id="pin-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d3')" onkeydown="pinBack(event,'pin-d1',this)">
-          <input id="pin-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'pin-d4')" onkeydown="pinBack(event,'pin-d2',this)">
-          <input id="pin-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)"    onkeydown="pinBack(event,'pin-d3',this)">
-        </div>
-        <div id="pin-error" style="color:#ff6b6b;font-size:12px;margin-bottom:12px;display:none">Incorrect PIN. Try again.</div>
-        <button onclick="submitPIN()" style="width:100%;padding:12px;background:linear-gradient(135deg,#e8720c,#ff8c2a);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">
-          Unlock & Open App →
-        </button>
-        <div style="margin-top:16px;font-size:11px;opacity:0.5;">First time on a new device? Just enter your PIN — data loads automatically.</div>
-      </div>
-    </div>
+<script type="module">
 
-    <!-- STEP 2: Firebase Setup -->
-    <div id="s-firebase" style="display:none;color:white;">
-      <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-size:32px;margin-bottom:8px;">☁️</div>
-        <div style="font-size:18px;font-weight:800;">One-Time Cloud Setup</div>
-        <div style="font-size:12px;opacity:0.6;margin-top:4px;">Takes 3 minutes. Free forever. Works on all devices.</div>
-      </div>
 
-      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.1);">
-        <div style="font-size:12px;font-weight:700;margin-bottom:14px;opacity:0.8;">📋 STEP-BY-STEP SETUP:</div>
-        <div style="font-size:12px;opacity:0.75;line-height:2.2;">
-          <b style="color:#fbbf24">1.</b> Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa;font-weight:700;">console.firebase.google.com</a><br>
-          <b style="color:#fbbf24">2.</b> Click <b style="color:white">"Add project"</b> → Name it <b style="color:white">"BalajiBilling"</b> → Create<br>
-          <b style="color:#fbbf24">3.</b> In left menu click <b style="color:white">"Build" → "Realtime Database"</b><br>
-          <b style="color:#fbbf24">4.</b> Click <b style="color:white">"Create Database"</b> → Choose any region → <b style="color:white">"Start in test mode"</b> → Enable<br>
-          <b style="color:#fbbf24">5.</b> Click ⚙️ Settings → <b style="color:white">"Project settings"</b> → Scroll down → Click <b style="color:white">"&lt;/&gt;"</b> (Web icon)<br>
-          <b style="color:#fbbf24">6.</b> Register app → Copy the <b style="color:#fbbf24">firebaseConfig</b> object → Paste below
-        </div>
-      </div>
 
-      <div style="margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Paste your firebaseConfig here:</div>
-        <textarea id="fb-config-input" placeholder='Paste the full firebaseConfig object here...
-Example:
-{
-  apiKey: "AIza...",
-  authDomain: "your-app.firebaseapp.com",
-  databaseURL: "https://your-app-default-rtdb.firebaseio.com",
-  projectId: "your-app",
-  ...
-}' style="
-  width:100%;height:140px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius:10px;
-  color:white;padding:12px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;resize:vertical;
-  outline:none;
-"></textarea>
-      </div>
+// Import Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 
-      <div id="fb-error" style="color:#ff6b6b;font-size:12px;margin-bottom:10px;display:none;padding:10px;background:rgba(255,0,0,0.1);border-radius:8px;"></div>
 
-      <button onclick="connectFirebase()" style="width:100%;padding:12px;background:linear-gradient(135deg,#e8720c,#ff8c2a);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;margin-bottom:10px;">
-        ☁️ Connect to Cloud →
-      </button>
 
-      <div style="text-align:center;font-size:11px;opacity:0.4;">Your data will be encrypted and private in your own Firebase project</div>
-    </div>
 
-    <!-- STEP 3: Create PIN -->
-    <div id="s-create-pin" style="display:none;color:white;text-align:center;">
-      <div style="font-size:40px;margin-bottom:12px;">🔐</div>
-      <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Create Your Secret PIN</div>
-      <div style="font-size:12px;opacity:0.6;margin-bottom:24px;">This PIN protects your business data on all devices</div>
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  onSnapshot,
+  deleteDoc,
+  doc
+} 
 
-      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.12);margin-bottom:16px;">
-        <div style="font-size:12px;opacity:0.7;margin-bottom:12px;">Choose a 4-digit PIN</div>
-        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
-          <input id="np-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d2')">
-          <input id="np-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d3')">
-          <input id="np-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'np-d4')">
-          <input id="np-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)">
-        </div>
-        <div style="font-size:12px;opacity:0.7;margin-bottom:12px;">Confirm PIN</div>
-        <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;">
-          <input id="cp-d1" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d2')">
-          <input id="cp-d2" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d3')">
-          <input id="cp-d3" maxlength="1" class="pin-box" oninput="pinMove(this,'cp-d4')">
-          <input id="cp-d4" maxlength="1" class="pin-box" oninput="pinMove(this,null)">
-        </div>
-        <div id="cp-error" style="color:#ff6b6b;font-size:12px;margin-bottom:12px;display:none;">PINs don't match. Try again.</div>
-        <button onclick="createPIN()" style="width:100%;padding:12px;background:linear-gradient(135deg,#0cad6a,#00d4aa);border:none;border-radius:10px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;">
-          Save PIN & Open App ✓
-        </button>
-      </div>
-    </div>
+window.deleteDoc = deleteDoc;
+window.doc = doc;
 
-  </div>
-</div>
 
-<style>
-.pin-box {
-  width:52px;height:60px;
-  background:rgba(255,255,255,0.1);
-  border:2px solid rgba(255,255,255,0.2);
-  border-radius:12px;
-  color:white;
-  font-size:24px;font-weight:800;
-  text-align:center;outline:none;
-  font-family:'JetBrains Mono',monospace;
-  transition:all 0.15s;
+ from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+// Your Firebase config
+const firebaseConfig = { apiKey: "AIzaSyAtPEDYE-eUmcLAemd6C3bU0Q4eoTWBssg", authDomain: "mypro-d654f.firebaseapp.com", databaseURL: "https://mypro-d654f-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "mypro-d654f", storageBucket: "mypro-d654f.firebasestorage.app", messagingSenderId: "243311351506", appId: "1:243311351506:web:2a52751d61b6759da23f0b", measurementId: "G-VW2M2M49VV" };
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Make db global
+window.db = db;
+window.collection = collection;
+window.addDoc = addDoc;
+window.onSnapshot = onSnapshot;
+onSnapshot(collection(db, "invoices"), (snapshot) => {
+
+  invoices = [];
+
+  snapshot.forEach(docSnap => {
+    invoices.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+ 
+
+updateCounts();
+
+if (document.getElementById("invoiceScreen").classList.contains("active")) {
+  showHistory();
 }
-.pin-box:focus { border-color:#e8720c; background:rgba(232,114,12,0.15); }
-</style>
+
+});
+
+
+
+
+</script>
+
+
 </body>
 </html>
